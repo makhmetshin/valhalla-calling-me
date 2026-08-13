@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime, formatNumber } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { closeModal, confirmAction, formModal, openModal } from '../core/modal.js';
 import { anchor, focusEntity } from '../core/navigation.js';
@@ -12,10 +13,10 @@ export async function renderMetrics(container, params = {}) {
   await loadMedia();
   const metrics = await api.metrics();
 
-  setHeader('Метрики', 'Счётчики, по которым видно, что ты двигаешься', [
+  setHeader(t('nav.metrics'), t('metric.subtitle'), [
     el('button', {
       class: 'btn primary',
-      text: 'Новая метрика',
+      text: t('metric.newOne'),
       onclick: () => metricForm(null, () => renderMetrics(container)),
     }),
   ]);
@@ -24,12 +25,12 @@ export async function renderMetrics(container, params = {}) {
     mount(
       container,
       emptyState(
-        'Счётчиков нет',
-        'Метрика — это то, что можно посчитать: дни, подходы, страницы, выходы из дома.',
+        t('metric.emptyTitle'),
+        t('metric.emptyHint'),
         el('button', {
           class: 'btn primary',
           style: { marginTop: '14px' },
-          text: 'Создать метрику',
+          text: t('metric.create'),
           onclick: () => metricForm(null, () => renderMetrics(container)),
         })
       )
@@ -67,7 +68,7 @@ function card(metric, container) {
         el('div', { class: 'card-title', text: metric.name }),
         el('div', {
           class: 'muted',
-          text: metric.direction === 'down' ? 'чем меньше, тем лучше' : 'чем больше, тем лучше',
+          text: metric.direction === 'down' ? t('metric.down') : t('metric.up'),
         })
       )
     ),
@@ -84,7 +85,7 @@ function card(metric, container) {
       }),
       el('span', { class: 'muted', text: metric.unit }),
       metric.target !== null && metric.target !== undefined
-        ? el('span', { class: 'muted', style: { marginLeft: 'auto' }, text: `цель ${formatNumber(metric.target)}` })
+        ? el('span', { class: 'muted', style: { marginLeft: 'auto' }, text: t('metric.goal', { value: formatNumber(metric.target) }) })
         : null
     ),
     ratio !== null ? el('div', { class: 'meter', style: { marginTop: '10px' } }, el('i', { style: { width: `${ratio * 100}%` } })) : null,
@@ -94,23 +95,23 @@ function card(metric, container) {
       { class: 'card-foot' },
       el('button', { class: 'btn sm', text: `−${formatNumber(metric.step)}`, onclick: () => apply(-metric.step) }),
       el('button', { class: 'btn sm primary', text: `+${formatNumber(metric.step)}`, onclick: () => apply(metric.step) }),
-      el('button', { class: 'btn sm ghost', text: 'Задать', onclick: () => setValueForm(metric, reload) }),
+      el('button', { class: 'btn sm ghost', text: t('metric.set'), onclick: () => setValueForm(metric, reload) }),
       el('span', { style: { flex: '1' } }),
-      el('button', { class: 'btn sm ghost', text: 'Хроника', onclick: () => historyModal(metric) }),
+      el('button', { class: 'btn sm ghost', text: t('metric.history'), onclick: () => historyModal(metric) }),
       el('button', {
         class: 'btn sm ghost',
-        text: 'Связи',
+        text: t('common.links'),
         onclick: () => openLinks('metric', metric.id, metric.name),
       }),
-      el('button', { class: 'btn sm ghost', text: 'Править', onclick: () => metricForm(metric, reload) }),
+      el('button', { class: 'btn sm ghost', text: t('common.edit'), onclick: () => metricForm(metric, reload) }),
       el('button', {
         class: 'btn sm ghost danger',
         text: '✕',
-        title: 'стереть метрику',
+        title: t('metric.deleteHint'),
         onclick: async () => {
           const yes = await confirmAction({
-            title: 'Стереть метрику',
-            message: `«${metric.name}» исчезнет вместе со своей хроникой.`,
+            title: t('metric.deleteTitle'),
+            message: t('metric.deleteText', { name: metric.name }),
           });
           if (!yes) return;
           await api.deleteMetric(metric.id);
@@ -123,11 +124,11 @@ function card(metric, container) {
 
 function setValueForm(metric, onDone) {
   formModal({
-    title: 'Задать значение',
+    title: t('metric.setValue'),
     subtitle: metric.name,
     fields: [
-      { name: 'value', label: 'Новое значение', type: 'number', value: metric.value },
-      { name: 'note', label: 'Пометка', type: 'text', value: '' },
+      { name: 'value', label: t('metric.newValue'), type: 'number', value: metric.value },
+      { name: 'note', label: t('metric.note'), type: 'text', value: '' },
     ],
     onSubmit: async (values) => {
       const result = await api.adjustMetric(metric.id, { value: values.value, note: values.note });
@@ -140,7 +141,7 @@ function setValueForm(metric, onDone) {
 async function historyModal(metric) {
   const entries = await api.metricHistory(metric.id);
   openModal({
-    title: 'Хроника',
+    title: t('metric.history'),
     subtitle: metric.name,
     content: [
       entries.length
@@ -157,45 +158,45 @@ async function historyModal(metric) {
                   el('div', {
                     text: `${entry.delta >= 0 ? '+' : ''}${formatNumber(entry.delta)} → ${formatNumber(entry.value_after)}`,
                   }),
-                  el('small', { text: entry.note || '—' })
+                  el('small', { text: entry.note || t('common.dash') })
                 ),
                 el('span', { class: 'muted', text: formatDateTime(entry.recorded_at) })
               )
             )
           )
-        : el('p', { class: 'muted', text: 'Записей нет' }),
+        : el('p', { class: 'muted', text: t('metric.noHistory') }),
     ],
-    actions: [el('button', { class: 'btn ghost', text: 'Закрыть', onclick: closeModal })],
+    actions: [el('button', { class: 'btn ghost', text: t('common.close'), onclick: closeModal })],
   });
 }
 
 export function metricForm(metric, onDone) {
   formModal({
-    title: metric ? 'Правка метрики' : 'Новая метрика',
+    title: metric ? t('metric.formEdit') : t('metric.newOne'),
     fields: [
-      { name: 'name', label: 'Название', value: metric?.name || '' },
-      { name: 'description', label: 'Описание', type: 'textarea', rows: 3, value: metric?.description || '' },
-      { name: 'unit', label: 'Единица', type: 'text', placeholder: 'дн., раз, км', value: metric?.unit || '' },
-      !metric ? { name: 'value', label: 'Начальное значение', type: 'number', value: 0 } : null,
-      { name: 'step', label: 'Шаг кнопки', type: 'number', value: metric?.step ?? 1 },
+      { name: 'name', label: t('common.title'), value: metric?.name || '' },
+      { name: 'description', label: t('common.description'), type: 'textarea', rows: 3, value: metric?.description || '' },
+      { name: 'unit', label: t('metric.unit'), type: 'text', placeholder: t('metric.unitPlaceholder'), value: metric?.unit || '' },
+      !metric ? { name: 'value', label: t('metric.startValue'), type: 'number', value: 0 } : null,
+      { name: 'step', label: t('metric.step'), type: 'number', value: metric?.step ?? 1 },
       {
         name: 'direction',
-        label: 'Направление',
+        label: t('metric.direction'),
         type: 'select',
         value: metric?.direction || 'up',
         options: [
-          { value: 'up', label: 'вверх — растёт' },
-          { value: 'down', label: 'вниз — падает' },
+          { value: 'up', label: t('metric.directionUp') },
+          { value: 'down', label: t('metric.directionDown') },
         ],
       },
-      { name: 'target', label: 'Цель', type: 'number', value: metric?.target ?? '' },
-      { name: 'icon_id', label: 'Иконка', type: 'media', kind: 'image', value: metric?.icon_id ?? null },
+      { name: 'target', label: t('metric.target'), type: 'number', value: metric?.target ?? '' },
+      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: metric?.icon_id ?? null },
     ],
     onSubmit: async (values) => {
-      if (!values.name.trim()) throw new Error('Название обязательно');
+      if (!values.name.trim()) throw new Error(t('common.titleRequired'));
       if (metric) await api.updateMetric(metric.id, values);
       else await api.createMetric(values);
-      toast('Метрика записана', values.name);
+      toast(t('metric.savedToast'), values.name);
       await onDone();
     },
   });

@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { clear, el, mount } from './dom.js';
-import { ENTITY_LABELS, MEDIA_COLLECTIONS } from './format.js';
+import { COLLECTION_KEYS, ENTITY_KINDS, collectionLabel, entityLabel } from './format.js';
+import { t } from './i18n.js';
 import { loadMedia, mediaById, mediaOfKind } from './state.js';
 import { playUrl } from './audio.js';
 import { toast } from './toast.js';
@@ -38,7 +39,7 @@ export function openModal({ title, subtitle, content, actions, width, onDismiss 
   return { modal, body };
 }
 
-export function confirmAction({ title, message, confirmLabel = 'Стереть', hint }) {
+export function confirmAction({ title, message, confirmLabel, hint }) {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (value) => {
@@ -55,7 +56,7 @@ export function confirmAction({ title, message, confirmLabel = 'Стереть',
       actions: [
         el('button', {
           class: 'btn ghost',
-          text: 'Отмена',
+          text: t('common.cancel'),
           onclick: () => {
             closeModal();
             finish(false);
@@ -63,7 +64,7 @@ export function confirmAction({ title, message, confirmLabel = 'Стереть',
         }),
         el('button', {
           class: 'btn danger',
-          text: confirmLabel,
+          text: confirmLabel || t('common.delete'),
           onclick: () => {
             closeModal();
             finish(true);
@@ -74,7 +75,7 @@ export function confirmAction({ title, message, confirmLabel = 'Стереть',
   });
 }
 
-export function formModal({ title, subtitle, fields, submitLabel = 'Сохранить', onSubmit }) {
+export function formModal({ title, subtitle, fields, submitLabel, onSubmit }) {
   const controls = new Map();
   const nodes = fields.filter(Boolean).map((field) => {
     const control = buildControl(field);
@@ -82,12 +83,12 @@ export function formModal({ title, subtitle, fields, submitLabel = 'Сохран
     return control.node;
   });
 
-  const submit = el('button', { class: 'btn primary', text: submitLabel });
+  const submit = el('button', { class: 'btn primary', text: submitLabel || t('common.save') });
   const { modal } = openModal({
     title,
     subtitle,
     content: nodes,
-    actions: [el('button', { class: 'btn ghost', text: 'Отмена', onclick: closeModal }), submit],
+    actions: [el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }), submit],
   });
 
   submit.onclick = async () => {
@@ -98,7 +99,7 @@ export function formModal({ title, subtitle, fields, submitLabel = 'Сохран
       await onSubmit(values);
       closeModal();
     } catch (error) {
-      toast('Не вышло', error.message, { tone: 'warn' });
+      toast(t('common.failed'), error.message, { tone: 'warn' });
       submit.disabled = false;
     }
   };
@@ -200,15 +201,15 @@ function buildControl(field) {
 
 function entityPicker(field) {
   const catalog = field.catalog || {};
-  const kinds = Object.keys(ENTITY_LABELS).filter((kind) => (catalog[kind] || []).length);
+  const kinds = ENTITY_KINDS.filter((kind) => (catalog[kind] || []).length);
   const current = field.value || {};
 
   const kindSelect = el(
     'select',
     {},
-    [el('option', { value: '', text: '— ни к чему —' })].concat(
+    [el('option', { value: '', text: t('common.notBound') })].concat(
       kinds.map((kind) =>
-        el('option', { value: kind, text: ENTITY_LABELS[kind], selected: kind === current.kind })
+        el('option', { value: kind, text: entityLabel(kind), selected: kind === current.kind })
       )
     )
   );
@@ -227,7 +228,7 @@ function entityPicker(field) {
               selected: item.id === preferredId,
             })
           )
-        : [el('option', { value: '', text: 'нечего выбрать' })]
+        : [el('option', { value: '', text: t('common.nothingToChoose') })]
     );
   }
 
@@ -255,7 +256,7 @@ function mediaPicker(field) {
   let selected = field.value ?? null;
 
   const grid = el('div', { class: 'picker-body' });
-  const search = el('input', { type: 'search', placeholder: 'поиск по названию' });
+  const search = el('input', { type: 'search', placeholder: t('common.search') });
   const file = el('input', {
     type: 'file',
     accept: kind === 'image' ? 'image/*' : kind === 'audio' ? 'audio/*' : 'video/*',
@@ -263,7 +264,7 @@ function mediaPicker(field) {
   });
   const uploadButton = el('button', {
     class: 'btn sm',
-    text: 'Загрузить',
+    text: t('common.upload'),
     onclick: (event) => {
       event.preventDefault();
       file.click();
@@ -280,7 +281,7 @@ function mediaPicker(field) {
       selected = asset.id;
       render();
     } catch (error) {
-      toast('Не удалось загрузить', error.message, { tone: 'warn' });
+      toast(t('common.uploadFailed'), error.message, { tone: 'warn' });
     } finally {
       uploadButton.disabled = false;
       file.value = '';
@@ -292,7 +293,7 @@ function mediaPicker(field) {
       'button',
       {
         class: selected === asset.id ? 'on' : '',
-        title: `${asset.title} (${asset.origin === 'preset' ? 'пресет' : 'своё'})`,
+        title: `${asset.title} (${asset.origin === 'preset' ? t('common.preset') : t('common.own')})`,
         onclick: (event) => {
           event.preventDefault();
           selected = asset.id;
@@ -318,15 +319,15 @@ function mediaPicker(field) {
 
     const groups = new Map();
     for (const asset of assets) {
-      const name = MEDIA_COLLECTIONS[asset.collection] ? asset.collection : 'uploads';
+      const name = COLLECTION_KEYS.includes(asset.collection) ? asset.collection : 'uploads';
       if (!groups.has(name)) groups.set(name, []);
       groups.get(name).push(asset);
     }
 
     const blank = el('button', {
       class: `none${selected === null ? ' on' : ''}`,
-      text: 'нет',
-      title: 'Без изображения',
+      text: t('common.none'),
+      title: t('common.noImage'),
       onclick: (event) => {
         event.preventDefault();
         selected = null;
@@ -335,7 +336,7 @@ function mediaPicker(field) {
     });
 
     const sections = [];
-    for (const name of Object.keys(MEDIA_COLLECTIONS)) {
+    for (const name of COLLECTION_KEYS) {
       const items = groups.get(name);
       if (!items) continue;
       const tiles = items.map(tile);
@@ -344,7 +345,7 @@ function mediaPicker(field) {
         el(
           'div',
           { class: 'picker-group' },
-          el('span', { text: MEDIA_COLLECTIONS[name] }),
+          el('span', { text: collectionLabel(name) }),
           el('span', { class: 'muted', text: items.length })
         ),
         el('div', { class: 'picker-grid' }, tiles)
@@ -368,7 +369,7 @@ function mediaPicker(field) {
 
 export function pickFromList({ title, subtitle, options, onPick, emptyHint }) {
   if (!options.length) {
-    toast('Пусто', emptyHint || 'Нечего выбирать', { tone: 'warn' });
+    toast(t('common.empty'), emptyHint || t('common.nothingToPick'), { tone: 'warn' });
     return;
   }
   const list = el(
@@ -398,7 +399,7 @@ export function pickFromList({ title, subtitle, options, onPick, emptyHint }) {
     title,
     subtitle,
     content: [list],
-    actions: [el('button', { class: 'btn ghost', text: 'Закрыть', onclick: closeModal })],
+    actions: [el('button', { class: 'btn ghost', text: t('common.close'), onclick: closeModal })],
   });
 }
 

@@ -1,17 +1,18 @@
 import { api } from '../core/api.js';
 import { el, iconPlate, mount } from '../core/dom.js';
 import { formatDate, formatDateTime, formatNumber, minutesToHuman } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { entityLink, openEntity } from '../core/navigation.js';
 import { navigate, setHeader } from '../core/router.js';
 import { loadMedia } from '../core/state.js';
 import { celebrateAll } from '../core/toast.js';
 
 const GREETINGS = [
-  'Ветер холодный. Идём дальше.',
-  'Норны уже спряли нить. Твоё дело — идти по ней.',
-  'Волк идёт следом. Не оборачивайся.',
-  'Море серое, вёсла на месте.',
-  'Тот, кто выдержал зиму, знает цену весне.',
+  t('dash.greeting1'),
+  t('dash.greeting2'),
+  t('dash.greeting3'),
+  t('dash.greeting4'),
+  t('dash.greeting5'),
 ];
 
 export async function renderDashboard(container) {
@@ -19,9 +20,9 @@ export async function renderDashboard(container) {
   const overview = await api.overview();
   const greeting = GREETINGS[new Date().getDate() % GREETINGS.length];
 
-  setHeader('Чертог', greeting, [
-    el('button', { class: 'btn', text: 'К плану дня', onclick: () => navigate('plan') }),
-    el('button', { class: 'btn primary', text: 'К ачивкам', onclick: () => navigate('achievements') }),
+  setHeader(t('nav.dashboard'), greeting, [
+    el('button', { class: 'btn', text: t('dash.toPlan'), onclick: () => navigate('plan') }),
+    el('button', { class: 'btn primary', text: t('dash.toAchievements'), onclick: () => navigate('achievements') }),
   ]);
 
   const progress = overview.achievements;
@@ -30,10 +31,10 @@ export async function renderDashboard(container) {
   const stats = el(
     'div',
     { class: 'grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' } },
-    stat(progress.unlocked, 'ачивок взято'),
-    stat(progress.locked, 'ещё впереди'),
-    stat(overview.open_tasks.length, 'тасок открыто'),
-    stat(overview.due_reminders, 'зовов ждёт')
+    stat(progress.unlocked, t('dash.unlocked')),
+    stat(progress.locked, t('dash.locked')),
+    stat(overview.open_tasks.length, t('dash.openTasks')),
+    stat(overview.due_reminders, t('dash.dueReminders'))
   );
 
   const blocks = [
@@ -42,11 +43,11 @@ export async function renderDashboard(container) {
     el('div', { class: 'meter', style: { marginTop: '14px' } }, el('i', { style: { width: `${ratio * 100}%` } })),
   ];
 
-  blocks.push(el('div', { class: 'section-title' }, el('span', { text: 'План на сегодня' })));
+  blocks.push(el('div', { class: 'section-title' }, el('span', { text: t('dash.todayPlan') })));
   blocks.push(overview.plan ? planBlock(overview.plan) : noPlan());
 
   if (overview.metrics.length) {
-    blocks.push(el('div', { class: 'section-title' }, el('span', { text: 'Метрики' })));
+    blocks.push(el('div', { class: 'section-title' }, el('span', { text: t('dash.metrics') })));
     blocks.push(
       el(
         'div',
@@ -56,7 +57,7 @@ export async function renderDashboard(container) {
     );
   }
 
-  blocks.push(el('div', { class: 'section-title' }, el('span', { text: 'Открытые таски' })));
+  blocks.push(el('div', { class: 'section-title' }, el('span', { text: t('dash.tasks') })));
   blocks.push(
     overview.open_tasks.length
       ? el(
@@ -80,7 +81,7 @@ export async function renderDashboard(container) {
                 'button',
                 {
                   class: 'title link-row',
-                  title: 'Открыть в чек-листе',
+                  title: t('dash.openInTasks'),
                   onclick: () => openEntity('task', task.id),
                 },
                 el('div', { text: task.title }),
@@ -89,11 +90,11 @@ export async function renderDashboard(container) {
             )
           )
         )
-      : el('p', { class: 'muted', text: 'Ничего не висит. Редкий день.' })
+      : el('p', { class: 'muted', text: t('dash.noTasks') })
   );
 
   if (overview.recent_unlocks.length) {
-    blocks.push(el('div', { class: 'section-title' }, el('span', { text: 'Последние победы' })));
+    blocks.push(el('div', { class: 'section-title' }, el('span', { text: t('dash.recent') })));
     blocks.push(
       el(
         'div',
@@ -146,7 +147,7 @@ function metricTile(metric, container) {
           'button',
           {
             class: 'card-title link-row',
-            title: 'Открыть метрику',
+            title: t('dash.openMetric'),
             onclick: () => openEntity('metric', metric.id),
           },
           metric.name
@@ -177,8 +178,11 @@ function planBlock(plan) {
     el(
       'div',
       { class: 'row between' },
-      el('span', { class: 'muted', text: plan.title || 'без имени' }),
-      el('span', { class: 'muted', text: `${minutesToHuman(plan.total_minutes)} · до ${plan.ends_at.slice(0, 5)}` })
+      el('span', { class: 'muted', text: plan.title || t('common.nameless') }),
+      el('span', { class: 'muted', text: t('plan.until', {
+            duration: minutesToHuman(plan.total_minutes),
+            time: plan.ends_at.slice(0, 5),
+          }) })
     ),
     el(
       'div',
@@ -198,7 +202,7 @@ function planBlock(plan) {
             { class: 'title', style: { flex: '1' } },
             slot.task_id ? entityLink('task', slot.task_id, slot.label) : el('div', { text: slot.label })
           ),
-          el('span', { class: 'units', text: `${slot.units} ед.` })
+          el('span', { class: 'units', text: `${slot.units}×` })
         );
       })
     )
@@ -209,8 +213,8 @@ function noPlan() {
   return el(
     'div',
     { class: 'empty' },
-    el('h3', { text: 'План не составлен' }),
-    el('p', { text: 'День без плана растворяется. Собери его из тасок.' }),
-    el('button', { class: 'btn primary', style: { marginTop: '12px' }, text: 'Собрать план', onclick: () => navigate('plan') })
+    el('h3', { text: t('dash.noPlanTitle') }),
+    el('p', { text: t('dash.noPlanHint') }),
+    el('button', { class: 'btn primary', style: { marginTop: '12px' }, text: t('dash.buildPlan'), onclick: () => navigate('plan') })
   );
 }

@@ -1,11 +1,10 @@
 import { el } from './dom.js';
+import { t } from './i18n.js';
 import { state } from './state.js';
 
 export const THEMES = [
   {
     name: 'fjord',
-    title: 'Морозный фьорд',
-    hint: 'Сталь, лёд и низкое небо над водой',
     palette: {
       abyss: '5 8 12',
       deep: '9 14 20',
@@ -24,8 +23,6 @@ export const THEMES = [
   },
   {
     name: 'whaleroad',
-    title: 'Китовая тропа',
-    hint: 'Открытое море, соль и зелёная глубина',
     palette: {
       abyss: '3 12 14',
       deep: '5 18 21',
@@ -44,8 +41,6 @@ export const THEMES = [
   },
   {
     name: 'hearth',
-    title: 'Долгий дом',
-    hint: 'Очаг, медовуха и тёплое дерево',
     palette: {
       abyss: '15 11 8',
       deep: '21 15 11',
@@ -64,8 +59,6 @@ export const THEMES = [
   },
   {
     name: 'bloodsnow',
-    title: 'Кровь на снегу',
-    hint: 'Серый рассвет после битвы',
     palette: {
       abyss: '8 9 11',
       deep: '13 14 17',
@@ -84,8 +77,6 @@ export const THEMES = [
   },
   {
     name: 'aurora',
-    title: 'Северное сияние',
-    hint: 'Мост Биврёст над чёрным небом',
     palette: {
       abyss: '6 7 15',
       deep: '10 12 23',
@@ -104,8 +95,6 @@ export const THEMES = [
   },
   {
     name: 'ironwood',
-    title: 'Железный лес',
-    hint: 'Мох, хвоя и волчьи тропы',
     palette: {
       abyss: '7 11 8',
       deep: '11 17 12',
@@ -124,8 +113,6 @@ export const THEMES = [
   },
   {
     name: 'niflheim',
-    title: 'Туманы Нифльхейма',
-    hint: 'Почти без цвета, только камень и пар',
     palette: {
       abyss: '10 12 14',
       deep: '15 18 21',
@@ -144,8 +131,6 @@ export const THEMES = [
   },
   {
     name: 'saga',
-    title: 'Пергамент саг',
-    hint: 'Светлая: выделанная кожа и бурые чернила',
     palette: {
       abyss: '224 213 191',
       deep: '235 226 207',
@@ -165,6 +150,14 @@ export const THEMES = [
 ];
 
 const ACCENT_TINT = 0.38;
+
+export function themeTitle(theme) {
+  return t(`theme.${theme.name}`);
+}
+
+export function themeHint(theme) {
+  return t(`theme.${theme.name}Hint`);
+}
 
 export function themeByName(name) {
   return THEMES.find((theme) => theme.name === name) || THEMES[0];

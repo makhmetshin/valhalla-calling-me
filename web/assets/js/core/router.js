@@ -1,5 +1,6 @@
 import { applyBackground } from './backgrounds.js';
 import { clear, el, glyph, mount } from './dom.js';
+import { t } from './i18n.js';
 import { toast } from './toast.js';
 
 const view = document.getElementById('view');
@@ -88,8 +89,11 @@ async function render(route, params) {
   try {
     await route.render(view, params);
   } catch (error) {
-    mount(view, el('div', { class: 'empty' }, el('h3', { text: 'Сбой' }), el('p', { text: error.message })));
-    toast('Ошибка', error.message, { tone: 'warn' });
+    mount(
+      view,
+      el('div', { class: 'empty' }, el('h3', { text: t('common.crash') }), el('p', { text: error.message }))
+    );
+    toast(t('common.error'), error.message, { tone: 'warn' });
   }
 }
 

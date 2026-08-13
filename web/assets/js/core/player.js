@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import { clear, el, mount } from './dom.js';
+import { t } from './i18n.js';
 import { navigate } from './router.js';
 import { emit, savePreferences, state } from './state.js';
 import { toast } from './toast.js';
@@ -171,28 +172,28 @@ function render() {
     el(
       'div',
       { class: 'player-controls' },
-      el('button', { class: 'player-btn', title: 'Предыдущая', text: '◀◀', onclick: previous }),
+      el('button', { class: 'player-btn', title: t('music.previous'), text: '◀◀', onclick: previous }),
       el('button', {
         class: 'player-btn main',
-        title: playing ? 'Пауза' : 'Играть',
+        title: playing ? t('music.pause') : t('music.play'),
         text: playing ? '❚❚' : '▶',
         onclick: toggle,
       }),
-      el('button', { class: 'player-btn', title: 'Следующая', text: '▶▶', onclick: next })
+      el('button', { class: 'player-btn', title: t('music.next'), text: '▶▶', onclick: next })
     ),
     el(
       'button',
       {
         class: 'player-now',
-        title: 'Открыть страницу музыки',
+        title: t('music.openPage'),
         onclick: () => navigate('music'),
       },
-      el('strong', { text: track ? track.title : 'Ничего не выбрано' }),
-      el('span', { text: track && track.artist ? track.artist : 'без имени' })
+      el('strong', { text: track ? track.title : t('music.nothingChosen') }),
+      el('span', { text: track && track.artist ? track.artist : t('common.nameless') })
     ),
     el('button', {
       class: 'player-fold',
-      title: player.collapsed ? 'Развернуть' : 'Свернуть',
+      title: player.collapsed ? t('music.expand') : t('music.collapse'),
       text: player.collapsed ? '‹' : '›',
       onclick: () => setCollapsed(!player.collapsed),
     })
@@ -216,5 +217,5 @@ sound.addEventListener('ended', () => load(player.index + 1, true));
 sound.addEventListener('error', () => {
   const track = currentTrack();
   if (!sound.src || !track) return;
-  toast('Не читается', `${track.title} — файла нет в vault/audio`, { tone: 'warn' });
+  toast(t('music.unreadable'), t('music.unreadableText', { name: track.title }), { tone: 'warn' });
 });

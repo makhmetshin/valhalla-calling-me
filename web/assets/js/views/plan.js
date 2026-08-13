@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, mount } from '../core/dom.js';
 import { minutesToHuman, toIsoDate } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { entityLink, focusTarget } from '../core/navigation.js';
@@ -28,8 +29,8 @@ export async function renderPlan(container, params = {}) {
   const board = el('div', { class: 'split' });
   mount(container, board);
 
-  setHeader('План дня', 'Единица времени, порядок тасок, количество единиц — расписание считается само', [
-    el('button', { class: 'btn ghost', text: 'Все планы', onclick: () => plansModal(container) }),
+  setHeader(t('nav.plan'), t('plan.subtitle'), [
+    el('button', { class: 'btn ghost', text: t('plan.allPlans'), onclick: () => plansModal(container) }),
   ]);
 
   async function loadDate(isoDate) {
@@ -82,13 +83,38 @@ export async function renderPlan(container, params = {}) {
     const setup = el(
       'div',
       { class: 'card stack' },
-      el('h3', { text: 'Основа' }),
-      field('Дата', el('input', {
-        type: 'date',
-        value: state.date,
-        onchange: (event) => loadDate(event.target.value),
-      })),
-      field('Начало', el('input', {
+      el('h3', { text: t('plan.base') }),
+      field(
+        t('plan.date'),
+        el(
+          'div',
+          { class: 'row wrap', style: { gap: '6px' } },
+          el('button', {
+            class: 'btn sm',
+            text: '‹',
+            title: t('plan.prevDay'),
+            onclick: () => shiftDay(-1),
+          }),
+          el('input', {
+            type: 'date',
+            value: state.date,
+            style: { flex: '1 1 120px' },
+            onchange: (event) => loadDate(event.target.value),
+          }),
+          el('button', {
+            class: 'btn sm',
+            text: '›',
+            title: t('plan.nextDay'),
+            onclick: () => shiftDay(1),
+          }),
+          el('button', {
+            class: 'btn sm ghost',
+            text: t('plan.today'),
+            onclick: () => loadDate(toIsoDate(new Date())),
+          })
+        )
+      ),
+      field(t('plan.start'), el('input', {
         type: 'time',
         value: state.start,
         onchange: (event) => {
@@ -97,14 +123,14 @@ export async function renderPlan(container, params = {}) {
         },
       })),
       field(
-        'Единица времени',
+        t('plan.unit'),
         el(
           'div',
           { class: 'chips' },
           UNIT_PRESETS.map((value) =>
             el('button', {
               class: `chip${state.unit === value ? ' on' : ''}`,
-              text: `${value} мин`,
+              text: `${value} ${t('common.minutesShort')}`,
               onclick: () => {
                 state.unit = value;
                 draw();
@@ -113,7 +139,7 @@ export async function renderPlan(container, params = {}) {
           )
         )
       ),
-      field('Перерыв, мин', el('input', {
+      field(t('plan.break'), el('input', {
         type: 'number',
         min: 0,
         value: state.pause,
@@ -122,22 +148,22 @@ export async function renderPlan(container, params = {}) {
           draw();
         },
       })),
-      field('Название дня', el('input', {
+      field(t('plan.dayTitle'), el('input', {
         type: 'text',
         value: state.title,
-        placeholder: 'например: день малых шагов',
+        placeholder: t('plan.dayTitlePlaceholder'),
         oninput: (event) => {
           state.title = event.target.value;
         },
       })),
-      field('Заметка', el('textarea', {
+      field(t('plan.note'), el('textarea', {
         rows: 3,
         value: state.notes,
         oninput: (event) => {
           state.notes = event.target.value;
         },
       })),
-      el('div', { class: 'section-title', text: 'Взять таску' }),
+      el('div', { class: 'section-title', text: t('plan.takeTask') }),
       el(
         'div',
         { class: 'chips' },
@@ -152,18 +178,18 @@ export async function renderPlan(container, params = {}) {
                 },
               })
             )
-          : el('span', { class: 'muted', text: 'Открытых тасок нет' })
+          : el('span', { class: 'muted', text: t('plan.noOpenTasks') })
       ),
       el('button', {
         class: 'btn',
-        text: '+ Свободный блок',
+        text: t('plan.freeBlock'),
         onclick: () =>
           formModal({
-            title: 'Свободный блок',
-            fields: [{ name: 'label', label: 'Что за блок', value: '' }],
-            submitLabel: 'Поставить',
+            title: t('plan.freeBlockTitle'),
+            fields: [{ name: 'label', label: t('plan.freeBlockLabel'), value: '' }],
+            submitLabel: t('plan.freeBlockSubmit'),
             onSubmit: (values) => {
-              if (!values.label.trim()) throw new Error('Название обязательно');
+              if (!values.label.trim()) throw new Error(t('common.titleRequired'));
               state.slots.push({ task_id: null, label: values.label, units: 1 });
               draw();
             },
@@ -181,8 +207,11 @@ export async function renderPlan(container, params = {}) {
         el('span', {
           class: 'muted',
           text: computed.length
-            ? `${minutesToHuman(totalMinutes)} · до ${clock(computed[computed.length - 1].to)}`
-            : 'пусто',
+            ? t('plan.until', {
+                duration: minutesToHuman(totalMinutes),
+                time: clock(computed[computed.length - 1].to),
+              })
+            : t('plan.nothing'),
         })
       ),
       computed.length
@@ -199,7 +228,7 @@ export async function renderPlan(container, params = {}) {
                   ? el('button', {
                       class: `checkmark${isDone ? ' on' : ''}`,
                       text: '✓',
-                      title: isDone ? 'вернуть в работу' : 'отметить исполненной',
+                      title: isDone ? t('plan.markOpen') : t('plan.markDone'),
                       onclick: () => setDone(task, !isDone),
                     })
                   : null,
@@ -211,7 +240,7 @@ export async function renderPlan(container, params = {}) {
                     ? entityLink('task', slot.task_id, slot.label)
                     : el('div', { text: slot.label })
                 ),
-                el('span', { class: 'units', text: `${slot.units}×${state.unit}м` }),
+                el('span', { class: 'units', text: `${slot.units}×${state.unit}${t('common.minutesShort')}` }),
                 stepper(slot.index),
                 el('button', {
                   class: 'btn ghost sm',
@@ -234,19 +263,24 @@ export async function renderPlan(container, params = {}) {
               );
             })
           )
-        : el('div', { class: 'empty' }, el('h3', { text: 'Расписание пустое' }), el('p', { text: 'Выбери таски слева — время посчитается само.' })),
+        : el(
+            'div',
+            { class: 'empty' },
+            el('h3', { text: t('plan.emptyTitle') }),
+            el('p', { text: t('plan.emptyHint') })
+          ),
       el(
         'div',
         { class: 'row' },
-        el('button', { class: 'btn primary', text: 'Сохранить план', onclick: save }),
+        el('button', { class: 'btn primary', text: t('plan.save'), onclick: save }),
         state.planId
           ? el('button', {
               class: 'btn ghost danger',
-              text: 'Удалить план',
+              text: t('plan.delete'),
               onclick: async () => {
                 const yes = await confirmAction({
-                  title: 'Стереть план',
-                  message: `План на ${state.date} исчезнет, таски останутся.`,
+                  title: t('plan.deleteTitle'),
+                  message: t('plan.deleteText', { date: state.date }),
                 });
                 if (!yes) return;
                 await api.deletePlan(state.planId);
@@ -257,7 +291,7 @@ export async function renderPlan(container, params = {}) {
         state.planId
           ? el('button', {
               class: 'btn ghost',
-              text: 'Связи',
+              text: t('common.links'),
               onclick: () => openLinks('day_plan', state.planId, state.date),
             })
           : null
@@ -297,6 +331,12 @@ export async function renderPlan(container, params = {}) {
     draw();
   }
 
+  function shiftDay(days) {
+    const moment = new Date(`${state.date}T12:00:00`);
+    moment.setDate(moment.getDate() + days);
+    loadDate(toIsoDate(moment));
+  }
+
   function move(index, direction) {
     const target = index + direction;
     if (target < 0 || target >= state.slots.length) return;
@@ -321,10 +361,10 @@ export async function renderPlan(container, params = {}) {
         })),
       });
       state.planId = plan.id;
-      toast('План закреплён', `${state.date} · ${minutesToHuman(plan.total_minutes)}`);
+      toast(t('plan.savedToast'), `${state.date} · ${minutesToHuman(plan.total_minutes)}`);
       draw();
     } catch (error) {
-      toast('Не сохранилось', error.message, { tone: 'warn' });
+      toast(t('plan.saveFailed'), error.message, { tone: 'warn' });
     }
   }
 
@@ -347,7 +387,7 @@ async function plansModal(container) {
   const { openModal, closeModal } = await import('../core/modal.js');
   const plans = await api.plans();
   openModal({
-    title: 'Летопись планов',
+    title: t('plan.chronicle'),
     content: [
       plans.length
         ? el(
@@ -362,12 +402,16 @@ async function plansModal(container) {
                   { class: 'title' },
                   el('div', { text: `${plan.plan_date}${plan.title ? ` — ${plan.title}` : ''}` }),
                   el('small', {
-                    text: `${plan.slots.length} блоков · ${minutesToHuman(plan.total_minutes)} · старт ${plan.starts_at.slice(0, 5)}`,
+                    text: t('plan.blocks', {
+                      count: plan.slots.length,
+                      duration: minutesToHuman(plan.total_minutes),
+                      time: plan.starts_at.slice(0, 5),
+                    }),
                   })
                 ),
                 el('button', {
                   class: 'btn sm',
-                  text: 'Открыть',
+                  text: t('common.open'),
                   onclick: () => {
                     closeModal();
                     renderPlan(container).then(() => {
@@ -382,8 +426,8 @@ async function plansModal(container) {
               )
             )
           )
-        : el('p', { class: 'muted', text: 'Планов ещё не было' }),
+        : el('p', { class: 'muted', text: t('plan.noPlans') }),
     ],
-    actions: [el('button', { class: 'btn ghost', text: 'Закрыть', onclick: closeModal })],
+    actions: [el('button', { class: 'btn ghost', text: t('common.close'), onclick: closeModal })],
   });
 }

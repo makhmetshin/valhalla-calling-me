@@ -1,4 +1,5 @@
 import { el, iconPlate, mount } from './dom.js';
+import { t } from './i18n.js';
 import { playUnlock } from './audio.js';
 
 const stack = document.getElementById('toasts');
@@ -67,13 +68,13 @@ function drain() {
       'div',
       { class: 'rite-inner' },
       iconPlate(achievement.icon),
-      el('h2', { text: 'Достижение открыто' }),
+      el('h2', { text: t('rite.unlocked') }),
       el('h1', { text: achievement.title }),
       achievement.description ? el('p', { text: achievement.description }) : null,
       el('p', {
         class: 'muted',
         style: { marginTop: '26px' },
-        text: 'нажми, чтобы продолжить путь',
+        text: t('rite.hint'),
       })
     )
   );

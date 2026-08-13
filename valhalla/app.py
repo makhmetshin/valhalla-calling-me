@@ -16,7 +16,8 @@ from valhalla.db.seed import seed_all
 from valhalla.db.session import init_database, session_scope
 from valhalla.media_paths import PRESET_MOUNT, VAULT_MOUNT
 from valhalla.services.errors import DomainError
-from valhalla.services.media import sync_presets
+from valhalla.services.media import scan_vault, sync_presets
+from valhalla.services.music import sync_playlist
 
 logger = logging.getLogger("valhalla")
 
@@ -27,6 +28,8 @@ def bootstrap() -> None:
     init_database()
     with session_scope() as session:
         sync_presets(session)
+        scan_vault(session)
+        sync_playlist(session)
         seed_all(session)
 
 

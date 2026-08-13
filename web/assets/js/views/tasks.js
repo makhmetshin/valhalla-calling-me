@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
-import { TASK_STATES, formatNumber } from '../core/format.js';
+import { formatNumber, taskStateLabel } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { anchor, entityLink, focusEntity } from '../core/navigation.js';
@@ -20,10 +21,10 @@ export async function renderTasks(container, params = {}) {
   const live = tasks.filter((task) => task.state !== 'done' && task.state !== 'abandoned');
   const dropped = tasks.filter((task) => task.state === 'abandoned');
 
-  setHeader('Чек-лист', `${done.length} из ${tasks.length} закрыто`, [
+  setHeader(t('nav.tasks'), t('task.subtitle', { done: done.length, total: tasks.length }), [
     el('button', {
       class: 'btn primary',
-      text: 'Новая таска',
+      text: t('task.newOne'),
       onclick: () => taskForm(null, achievements, metrics, () => renderTasks(container)),
     }),
   ]);
@@ -32,12 +33,12 @@ export async function renderTasks(container, params = {}) {
     mount(
       container,
       emptyState(
-        'Чек-лист пуст',
-        'Мелкая задача, которую нельзя провалить, — лучшее начало дня.',
+        t('task.emptyTitle'),
+        t('task.emptyHint'),
         el('button', {
           class: 'btn primary',
           style: { marginTop: '14px' },
-          text: 'Добавить таску',
+          text: t('task.create'),
           onclick: () => taskForm(null, achievements, metrics, () => renderTasks(container)),
         })
       )
@@ -52,9 +53,9 @@ export async function renderTasks(container, params = {}) {
     blocks.push(el('div', { class: 'list' }, items.map((task) => row(task, achievements, metrics, container))));
   };
 
-  section('В работе', live);
-  section('Исполнено', done);
-  section('Оставлено', dropped);
+  section(t('task.live'), live);
+  section(t('task.done'), done);
+  section(t('task.dropped'), dropped);
   mount(container, blocks);
   focusEntity(container, params);
 }
@@ -70,8 +71,8 @@ function row(task, achievements, metrics, container) {
   };
 
   const meta = [];
-  if (task.units > 1) meta.push(`${task.units} ед. времени`);
-  if (task.state === 'active') meta.push(TASK_STATES.active);
+  if (task.units > 1) meta.push(t('task.units', { count: task.units }));
+  if (task.state === 'active') meta.push(taskStateLabel('active'));
 
   const bonds = [];
   const achievement = achievements.find((item) => item.id === task.achievement_id);
@@ -101,7 +102,7 @@ function row(task, achievements, metrics, container) {
     !isDone
       ? el('button', {
           class: 'btn ghost sm',
-          text: task.state === 'active' ? 'В покой' : 'В бой',
+          text: task.state === 'active' ? t('task.toRest') : t('task.toBattle'),
           onclick: async () => {
             await api.setTaskState(task.id, task.state === 'active' ? 'open' : 'active');
             reload();
@@ -110,22 +111,22 @@ function row(task, achievements, metrics, container) {
       : null,
     el('button', {
       class: 'btn ghost sm',
-      text: 'Связи',
+      text: t('common.links'),
       onclick: () => openLinks('task', task.id, task.title),
     }),
     el('button', {
       class: 'btn ghost sm',
-      text: 'Править',
+      text: t('common.edit'),
       onclick: () => taskForm(task, achievements, metrics, reload),
     }),
     el('button', {
       class: 'btn ghost sm danger',
       text: '✕',
-      title: 'стереть таску',
+      title: t('task.deleteHint'),
       onclick: async () => {
         const yes = await confirmAction({
-          title: 'Стереть таску',
-          message: `«${task.title}» исчезнет из чек-листа.`,
+          title: t('task.deleteTitle'),
+          message: t('task.deleteText', { name: task.title }),
         });
         if (!yes) return;
         await api.deleteTask(task.id);
@@ -137,51 +138,51 @@ function row(task, achievements, metrics, container) {
 
 export function taskForm(task, achievements, metrics, onDone) {
   formModal({
-    title: task ? 'Правка таски' : 'Новая таска',
+    title: task ? t('task.formEdit') : t('task.newOne'),
     fields: [
-      { name: 'title', label: 'Что сделать', value: task?.title || '' },
-      { name: 'notes', label: 'Пометки', type: 'textarea', rows: 3, value: task?.notes || '' },
+      { name: 'title', label: t('task.what'), value: task?.title || '' },
+      { name: 'notes', label: t('task.notes'), type: 'textarea', rows: 3, value: task?.notes || '' },
       {
         name: 'units',
-        label: 'Единиц времени',
+        label: t('task.unitsLabel'),
         type: 'number',
         min: 1,
         step: 1,
         value: task?.units ?? 1,
-        help: 'сколько блоков займёт в плане дня',
+        help: t('task.unitsHelp'),
       },
-      { name: 'icon_id', label: 'Иконка', type: 'media', kind: 'image', value: task?.icon_id ?? null },
+      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: task?.icon_id ?? null },
       {
         name: 'achievement_id',
-        label: 'Закрывает ачивку',
+        label: t('task.closesAchievement'),
         type: 'select',
         value: task?.achievement_id ?? '',
-        options: [{ value: null, label: '— нет —' }].concat(
+        options: [{ value: null, label: t('task.nothing') }].concat(
           achievements.map((item) => ({ value: item.id, label: item.title }))
         ),
       },
       {
         name: 'metric_id',
-        label: 'Двигает метрику',
+        label: t('task.movesMetric'),
         type: 'select',
         value: task?.metric_id ?? '',
-        options: [{ value: null, label: '— нет —' }].concat(
+        options: [{ value: null, label: t('task.nothing') }].concat(
           metrics.map((item) => ({ value: item.id, label: `${item.name} (${item.unit})` }))
         ),
       },
       {
         name: 'metric_delta',
-        label: 'На сколько',
+        label: t('task.byHowMuch'),
         type: 'number',
         value: task?.metric_delta ?? 0,
       },
     ],
     onSubmit: async (values) => {
-      if (!values.title.trim()) throw new Error('Название обязательно');
+      if (!values.title.trim()) throw new Error(t('common.titleRequired'));
       const payload = { ...values, metric_delta: values.metric_delta ?? 0, units: values.units || 1 };
       if (task) await api.updateTask(task.id, payload);
       else await api.createTask(payload);
-      toast('Записано', payload.title);
+      toast(t('common.saved'), payload.title);
       await onDone();
     },
   });

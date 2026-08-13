@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { el, mount } from './dom.js';
-import { ENTITY_LABELS } from './format.js';
+import { ENTITY_KINDS, entityLabel } from './format.js';
+import { t } from './i18n.js';
 import { closeModal, openModal } from './modal.js';
 import { openEntity } from './navigation.js';
 import { toast } from './toast.js';
@@ -12,12 +13,12 @@ export async function openLinks(kind, id, label) {
   const targetKind = el(
     'select',
     {},
-    Object.keys(ENTITY_LABELS).map((key) =>
-      el('option', { value: key, text: ENTITY_LABELS[key], selected: key === 'codex_entry' })
+    ENTITY_KINDS.map((key) =>
+      el('option', { value: key, text: entityLabel(key), selected: key === 'codex_entry' })
     )
   );
   const targetId = el('select', {});
-  const note = el('input', { type: 'text', placeholder: 'зачем эта связь' });
+  const note = el('input', { type: 'text', placeholder: t('links.note') });
 
   function fillTargets() {
     const options = (catalog[targetKind.value] || []).filter(
@@ -32,7 +33,7 @@ export async function openLinks(kind, id, label) {
               text: item.detail ? `${item.label} — ${item.detail}` : item.label,
             })
           )
-        : [el('option', { value: '', text: 'пусто' })]
+        : [el('option', { value: '', text: t('links.emptyKind') })]
     );
   }
 
@@ -52,19 +53,19 @@ export async function openLinks(kind, id, label) {
                 'button',
                 {
                   class: 'title link-row',
-                  title: 'Перейти к нему',
+                  title: t('common.goToIt'),
                   disabled: !other,
                   onclick: () => {
                     closeModal();
                     openEntity(otherKind, other.id);
                   },
                 },
-                el('div', { text: other ? other.label : 'потеряно' }),
-                el('small', { text: `${ENTITY_LABELS[otherKind]}${link.note ? ` · ${link.note}` : ''}` })
+                el('div', { text: other ? other.label : t('links.lost') }),
+                el('small', { text: `${entityLabel(otherKind)}${link.note ? ` · ${link.note}` : ''}` })
               ),
               el('button', {
                 class: 'btn ghost sm',
-                text: 'Разорвать',
+                text: t('links.break'),
                 onclick: async () => {
                   await api.deleteLink(link.id);
                   renderList(await api.links(kind, id));
@@ -72,7 +73,7 @@ export async function openLinks(kind, id, label) {
               })
             );
           })
-        : [el('div', { class: 'list-item' }, el('div', { class: 'title muted', text: 'Связей нет' }))]
+        : [el('div', { class: 'list-item' }, el('div', { class: 'title muted', text: t('links.none') }))]
     );
   }
 
@@ -81,11 +82,11 @@ export async function openLinks(kind, id, label) {
   renderList(links);
 
   openModal({
-    title: 'Связи',
+    title: t('links.title'),
     subtitle: label,
     content: [
       list,
-      el('div', { class: 'section-title', text: 'Новая связь' }),
+      el('div', { class: 'section-title', text: t('links.newLink') }),
       el(
         'div',
         { class: 'row wrap' },
@@ -95,7 +96,7 @@ export async function openLinks(kind, id, label) {
       note,
       el('button', {
         class: 'btn primary',
-        text: 'Связать',
+        text: t('links.bind'),
         onclick: async () => {
           if (!targetId.value) return;
           try {
@@ -109,11 +110,11 @@ export async function openLinks(kind, id, label) {
             note.value = '';
             renderList(await api.links(kind, id));
           } catch (error) {
-            toast('Не связалось', error.message, { tone: 'warn' });
+            toast(t('links.failed'), error.message, { tone: 'warn' });
           }
         },
       }),
     ],
-    actions: [el('button', { class: 'btn ghost', text: 'Закрыть', onclick: closeModal })],
+    actions: [el('button', { class: 'btn ghost', text: t('common.close'), onclick: closeModal })],
   });
 }

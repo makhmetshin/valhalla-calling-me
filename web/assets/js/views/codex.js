@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { clear, el, mount } from '../core/dom.js';
 import { formatDateTime, renderProse } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { focusTarget } from '../core/navigation.js';
@@ -18,12 +19,12 @@ export async function renderCodex(container, params = {}) {
   const focus = focusTarget(params);
 
   if (!order.length) {
-    setHeader('Кодекс', 'Твой бестиарий и летопись', [
-      el('button', { class: 'btn primary', text: 'Первая глава', onclick: () => chapterForm(null, outline, () => renderCodex(container)) }),
+    setHeader(t('nav.codex'), t('codex.subtitleEmpty'), [
+      el('button', { class: 'btn primary', text: t('codex.firstChapter'), onclick: () => chapterForm(null, outline, () => renderCodex(container)) }),
     ]);
     mount(
       container,
-      el('div', { class: 'empty' }, el('h3', { text: 'Кодекс пуст' }), el('p', { text: 'Заведи главу — и начни записывать наблюдения.' }))
+      el('div', { class: 'empty' }, el('h3', { text: t('codex.emptyTitle') }), el('p', { text: t('codex.emptyHint') }))
     );
     return;
   }
@@ -35,16 +36,16 @@ export async function renderCodex(container, params = {}) {
   const book = el('div', { class: 'book' });
   mount(container, el('div', { class: 'codex' }, nav, book));
 
-  setHeader('Кодекс', 'Главы, страницы, наблюдения', [
-    el('button', { class: 'btn', text: 'Новая глава', onclick: () => chapterForm(null, outline, () => renderCodex(container)) }),
+  setHeader(t('nav.codex'), t('codex.subtitle'), [
+    el('button', { class: 'btn', text: t('codex.newChapter'), onclick: () => chapterForm(null, outline, () => renderCodex(container)) }),
     el('button', {
       class: 'btn primary',
-      text: 'Новая страница',
+      text: t('codex.newEntry'),
       onclick: () => entryForm(null, order, outline, (entry) => renderCodex(container, { entryId: entry.id })),
     }),
   ]);
 
-  const search = el('input', { type: 'search', placeholder: 'искать по кодексу' });
+  const search = el('input', { type: 'search', placeholder: t('codex.search') });
   search.oninput = async () => {
     const query = search.value.trim();
     if (query.length < 2) {
@@ -62,7 +63,7 @@ export async function renderCodex(container, params = {}) {
               onclick: () => open(entry.id, 1),
             })
           )
-        : [el('p', { class: 'muted', style: { padding: '10px' }, text: 'Ничего не найдено' })]
+        : [el('p', { class: 'muted', style: { padding: '10px' }, text: t('codex.notFound') })]
     );
   };
 
@@ -98,7 +99,7 @@ export async function renderCodex(container, params = {}) {
         el('button', {
           class: 'btn ghost sm',
           text: '+',
-          title: 'страница в главу',
+          title: t('codex.addEntry'),
           onclick: (event) => {
             event.stopPropagation();
             entryForm({ chapter_id: chapter.id }, order, outline, (entry) =>
@@ -109,7 +110,7 @@ export async function renderCodex(container, params = {}) {
         el('button', {
           class: 'btn ghost sm',
           text: '⚙',
-          title: 'править главу',
+          title: t('codex.editChapter'),
           onclick: (event) => {
             event.stopPropagation();
             chapterForm(chapter, outline, () => renderCodex(container, { entryId: currentId }));
@@ -118,18 +119,18 @@ export async function renderCodex(container, params = {}) {
         el('button', {
           class: 'btn ghost sm danger',
           text: '✕',
-          title: 'вырвать главу',
+          title: t('codex.dropChapter'),
           onclick: async (event) => {
             event.stopPropagation();
             const yes = await confirmAction({
-              title: 'Вырвать главу',
-              message: `«${chapter.title}» уйдёт вместе со своими страницами и вложенными главами.`,
+              title: t('codex.dropChapterTitle'),
+              message: t('codex.dropChapterText', { name: chapter.title }),
               hint: chapterHint(chapter),
             });
             if (!yes) return;
             await api.deleteChapter(chapter.id);
             lastEntryId = null;
-            toast('Глава вырвана', chapter.title);
+            toast(t('codex.chapterDropped'), chapter.title);
             renderCodex(container);
           },
         })
@@ -175,27 +176,27 @@ export async function renderCodex(container, params = {}) {
           { class: 'row' },
           el('button', {
             class: 'btn sm ghost',
-            text: 'Картинка',
+            text: t('codex.image'),
             onclick: () => addImage(entry, () => drawPage(0)),
           }),
           el('button', {
             class: 'btn sm ghost',
-            text: 'Связи',
+            text: t('common.links'),
             onclick: () => openLinks('codex_entry', entry.id, entry.title),
           }),
           el('button', {
             class: 'btn sm',
-            text: 'Править',
+            text: t('common.edit'),
             onclick: () => entryForm(entry, order, outline, () => renderCodex(container, { entryId: entry.id })),
           }),
           el('button', {
             class: 'btn sm ghost danger',
             text: '✕',
-            title: 'вырвать страницу',
+            title: t('codex.dropEntry'),
             onclick: async () => {
               const yes = await confirmAction({
-                title: 'Вырвать страницу',
-                message: `«${entry.title}» исчезнет из кодекса.`,
+                title: t('codex.dropEntryTitle'),
+                message: t('codex.dropEntryText', { name: entry.title }),
               });
               if (!yes) return;
               await api.deleteEntry(entry.id);
@@ -219,9 +220,9 @@ export async function renderCodex(container, params = {}) {
                 oncontextmenu: async (event) => {
                   event.preventDefault();
                   const yes = await confirmAction({
-                    title: 'Убрать картинку',
-                    message: 'Картинка исчезнет со страницы, сам файл останется в библиотеке.',
-                    confirmLabel: 'Убрать',
+                    title: t('codex.dropImageTitle'),
+                    message: t('codex.dropImageText'),
+                    confirmLabel: t('common.remove'),
                   });
                   if (!yes) return;
                   await api.updateEntry(entry.id, {
@@ -238,14 +239,20 @@ export async function renderCodex(container, params = {}) {
         { class: 'page-foot' },
         el('button', {
           class: 'btn sm ghost',
-          text: '‹ назад',
+          text: t('codex.back'),
           disabled: index <= 0,
           onclick: () => open(order[index - 1].id, -1),
         }),
-        el('span', { text: `${index + 1} / ${order.length} · правлено ${formatDateTime(entry.updated_at)}` }),
+        el('span', {
+          text: t('codex.pageFoot', {
+            index: index + 1,
+            total: order.length,
+            when: formatDateTime(entry.updated_at),
+          }),
+        }),
         el('button', {
           class: 'btn sm ghost',
-          text: 'вперёд ›',
+          text: t('codex.forward'),
           disabled: index >= order.length - 1,
           onclick: () => open(order[index + 1].id, 1),
         })
@@ -291,8 +298,8 @@ function chapterWeight(chapter) {
 
 function chapterHint(chapter) {
   const { chapters, entries } = chapterWeight(chapter);
-  const parts = [`страниц: ${entries}`];
-  if (chapters) parts.unshift(`вложенных глав: ${chapters}`);
+  const parts = [t('codex.chapterWeight', { entries })];
+  if (chapters) parts.unshift(t('codex.chapterNested', { chapters }));
   return parts.join(' · ');
 }
 
@@ -331,23 +338,23 @@ function chapterOptions(chapters, depth = 0) {
 
 function chapterForm(chapter, outline, onDone) {
   formModal({
-    title: chapter ? 'Правка главы' : 'Новая глава',
+    title: chapter ? t('codex.chapterForm') : t('codex.newChapter'),
     fields: [
-      { name: 'title', label: 'Название', value: chapter?.title || '' },
-      { name: 'summary', label: 'О чём глава', type: 'textarea', rows: 3, value: chapter?.summary || '' },
+      { name: 'title', label: t('common.title'), value: chapter?.title || '' },
+      { name: 'summary', label: t('codex.chapterAbout'), type: 'textarea', rows: 3, value: chapter?.summary || '' },
       {
         name: 'parent_id',
-        label: 'Вложить в главу',
+        label: t('codex.nestInto'),
         type: 'select',
         value: chapter?.parent_id ?? '',
-        options: [{ value: null, label: '— корень —' }].concat(
+        options: [{ value: null, label: t('codex.root') }].concat(
           chapterOptions(outline).filter((option) => option.value !== chapter?.id)
         ),
       },
-      { name: 'icon_id', label: 'Иконка', type: 'media', kind: 'image', value: chapter?.icon_id ?? null },
+      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: chapter?.icon_id ?? null },
     ],
     onSubmit: async (values) => {
-      if (!values.title.trim()) throw new Error('Название обязательно');
+      if (!values.title.trim()) throw new Error(t('common.titleRequired'));
       if (chapter) await api.updateChapter(chapter.id, values);
       else await api.createChapter(values);
       await onDone();
@@ -358,25 +365,25 @@ function chapterForm(chapter, outline, onDone) {
 function entryForm(entry, order, outline, onDone) {
   const isNew = !entry || !entry.id;
   formModal({
-    title: isNew ? 'Новая страница' : 'Правка страницы',
-    subtitle: 'Поддерживается **жирный**, _курсив_, ## заголовки, списки и > цитаты',
+    title: isNew ? t('codex.newEntry') : t('codex.entryForm'),
+    subtitle: t('codex.entryHint'),
     fields: [
       {
         name: 'chapter_id',
-        label: 'Глава',
+        label: t('codex.chapter'),
         type: 'select',
         value: entry?.chapter_id ?? outline[0]?.id,
         options: chapterOptions(outline),
       },
-      { name: 'title', label: 'Заголовок', value: entry?.title || '' },
-      { name: 'body', label: 'Текст', type: 'textarea', rows: 14, value: entry?.body || '' },
-      { name: 'cover_id', label: 'Обложка', type: 'media', kind: 'image', value: entry?.cover_id ?? null },
+      { name: 'title', label: t('codex.entryTitle'), value: entry?.title || '' },
+      { name: 'body', label: t('codex.entryBody'), type: 'textarea', rows: 14, value: entry?.body || '' },
+      { name: 'cover_id', label: t('codex.cover'), type: 'media', kind: 'image', value: entry?.cover_id ?? null },
     ],
     onSubmit: async (values) => {
-      if (!values.title.trim()) throw new Error('Заголовок обязателен');
-      if (!values.chapter_id) throw new Error('Выбери главу');
+      if (!values.title.trim()) throw new Error(t('rem.headingRequired'));
+      if (!values.chapter_id) throw new Error(t('codex.pickChapter'));
       const saved = isNew ? await api.createEntry(values) : await api.updateEntry(entry.id, values);
-      toast('Страница записана', saved.title);
+      toast(t('codex.entrySaved'), saved.title);
       await onDone(saved);
     },
   });
@@ -384,11 +391,11 @@ function entryForm(entry, order, outline, onDone) {
 
 function addImage(entry, onDone) {
   formModal({
-    title: 'Картинка на страницу',
-    fields: [{ name: 'media_id', label: 'Изображение', type: 'media', kind: 'image', value: null }],
-    submitLabel: 'Вклеить',
+    title: t('codex.addImageTitle'),
+    fields: [{ name: 'media_id', label: t('codex.imageField'), type: 'media', kind: 'image', value: null }],
+    submitLabel: t('codex.addImageSubmit'),
     onSubmit: async (values) => {
-      if (!values.media_id) throw new Error('Выбери изображение');
+      if (!values.media_id) throw new Error(t('codex.pickImage'));
       const ids = entry.images.map((item) => item.id);
       if (!ids.includes(values.media_id)) ids.push(values.media_id);
       await api.updateEntry(entry.id, { image_ids: ids });

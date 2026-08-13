@@ -17,6 +17,7 @@ from valhalla.schemas.tasks import TaskRead
 from valhalla.services import achievements as achievement_service
 from valhalla.services import media as media_service
 from valhalla.services import metrics as metric_service
+from valhalla.services import music as music_service
 from valhalla.services import planning as planning_service
 from valhalla.services import preferences as preference_service
 from valhalla.services import reminders as reminder_service
@@ -117,4 +118,5 @@ def sync_presets(session: DbSession) -> dict[str, int]:
 
 @router.post("/vault/scan")
 def scan_vault(session: DbSession) -> dict[str, int]:
-    return {"discovered": media_service.scan_vault(session)}
+    discovered = media_service.scan_vault(session)
+    return {"discovered": discovered, "tracks": music_service.sync_playlist(session)}

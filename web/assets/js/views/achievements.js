@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime, formatNumber } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { anchor, entityLink, focusEntity } from '../core/navigation.js';
@@ -18,17 +19,17 @@ export async function renderAchievements(container, params = {}) {
 
   const unlocked = achievements.filter((item) => item.unlocked).length;
   setHeader(
-    'Ачивки',
-    `${unlocked} из ${achievements.length} взято`,
+    t('nav.achievements'),
+    t('ach.subtitle', { unlocked, total: achievements.length }),
     [
       el('button', {
         class: 'btn',
-        text: 'Новая группа',
+        text: t('ach.newGroup'),
         onclick: () => groupForm(null, () => renderAchievements(container)),
       }),
       el('button', {
         class: 'btn primary',
-        text: 'Новая ачивка',
+        text: t('ach.newOne'),
         onclick: () => achievementForm(null, groups, metrics, () => renderAchievements(container)),
       }),
     ]
@@ -38,12 +39,12 @@ export async function renderAchievements(container, params = {}) {
     mount(
       container,
       emptyState(
-        'Ни одной ачивки',
-        'Придумай себе первое испытание. Даже самое малое считается.',
+        t('ach.emptyTitle'),
+        t('ach.emptyHint'),
         el('button', {
           class: 'btn primary',
           style: { marginTop: '14px' },
-          text: 'Создать ачивку',
+          text: t('ach.create'),
           onclick: () => achievementForm(null, groups, metrics, () => renderAchievements(container)),
         })
       )
@@ -73,17 +74,17 @@ export async function renderAchievements(container, params = {}) {
         el('span', { class: 'muted', text: `${items.filter((i) => i.unlocked).length}/${items.length}` }),
         el('button', {
           class: 'btn ghost sm',
-          text: 'править',
+          text: t('ach.groupEdit'),
           onclick: () => groupForm(group, () => renderAchievements(container)),
         }),
         el('button', {
           class: 'btn ghost sm danger',
-          text: 'удалить',
+          text: t('ach.groupDelete'),
           onclick: async () => {
             const yes = await confirmAction({
-              title: 'Убрать группу',
-              message: `«${group.name}» исчезнет, ачивки из неё останутся без группы.`,
-              confirmLabel: 'Убрать',
+              title: t('ach.groupDropTitle'),
+              message: t('ach.groupDropText', { name: group.name }),
+              confirmLabel: t('common.remove'),
             });
             if (!yes) return;
             await api.deleteGroup(group.id);
@@ -99,12 +100,12 @@ export async function renderAchievements(container, params = {}) {
             { class: 'grid cards' },
             items.map((item) => card(item, groups, metrics, container))
           )
-        : el('p', { class: 'muted', text: 'Пусто. Испытания ещё не назначены.' })
+        : el('p', { class: 'muted', text: t('ach.groupEmpty') })
     );
   }
 
   if (orphans.length) {
-    sections.push(el('div', { class: 'section-title' }, el('span', { text: 'Без группы' })));
+    sections.push(el('div', { class: 'section-title' }, el('span', { text: t('ach.noGroup') })));
     sections.push(
       el('div', { class: 'grid cards' }, orphans.map((item) => card(item, groups, metrics, container)))
     );
@@ -138,8 +139,8 @@ function card(achievement, groups, metrics, container) {
         el('div', {
           class: 'muted',
           text: achievement.unlocked
-            ? `взято ${formatDateTime(achievement.unlocked_at)}`
-            : 'ещё не взято',
+            ? t('ach.takenAt', { when: formatDateTime(achievement.unlocked_at) })
+            : t('ach.notTaken'),
         })
       )
     ),
@@ -169,7 +170,7 @@ function card(achievement, groups, metrics, container) {
       achievement.unlocked
         ? el('button', {
             class: 'btn sm ghost',
-            text: 'Снять',
+            text: t('ach.lock'),
             onclick: async () => {
               await api.lockAchievement(achievement.id);
               reload();
@@ -177,7 +178,7 @@ function card(achievement, groups, metrics, container) {
           })
         : el('button', {
             class: 'btn sm primary',
-            text: 'Выполнено',
+            text: t('ach.unlock'),
             onclick: async () => {
               const updated = await api.unlockAchievement(achievement.id);
               celebrate(updated);
@@ -187,22 +188,22 @@ function card(achievement, groups, metrics, container) {
       el('span', { style: { flex: '1' } }),
       el('button', {
         class: 'btn sm ghost',
-        text: 'Связи',
+        text: t('common.links'),
         onclick: () => openLinks('achievement', achievement.id, achievement.title),
       }),
       el('button', {
         class: 'btn sm ghost',
-        text: 'Править',
+        text: t('common.edit'),
         onclick: () => achievementForm(achievement, groups, metrics, reload),
       }),
       el('button', {
         class: 'btn sm ghost danger',
         text: '✕',
-        title: 'стереть ачивку',
+        title: t('ach.deleteHint'),
         onclick: async () => {
           const yes = await confirmAction({
-            title: 'Стереть ачивку',
-            message: `«${achievement.title}» исчезнет вместе со своими связями.`,
+            title: t('ach.deleteTitle'),
+            message: t('ach.deleteText', { name: achievement.title }),
           });
           if (!yes) return;
           await api.deleteAchievement(achievement.id);
@@ -216,67 +217,71 @@ function card(achievement, groups, metrics, container) {
 export function achievementForm(achievement, groups, metrics, onDone) {
   const editing = Boolean(achievement);
   formModal({
-    title: editing ? 'Правка ачивки' : 'Новая ачивка',
-    subtitle: 'Опиши испытание так, чтобы потом было понятно, что ты сделал',
+    title: editing ? t('ach.formEdit') : t('ach.newOne'),
+    subtitle: t('ach.formSubtitle'),
     fields: [
-      { name: 'title', label: 'Название', value: achievement?.title || '' },
+      { name: 'title', label: t('common.title'), value: achievement?.title || '' },
       {
         name: 'description',
-        label: 'Описание',
+        label: t('common.description'),
         type: 'textarea',
         rows: 4,
         value: achievement?.description || '',
       },
       {
         name: 'lore',
-        label: 'Присказка',
+        label: t('ach.lore'),
         type: 'text',
-        placeholder: 'строка из саги, необязательно',
+        placeholder: t('ach.lorePlaceholder'),
         value: achievement?.lore || '',
       },
       {
         name: 'group_id',
-        label: 'Группа',
+        label: t('ach.group'),
         type: 'select',
         value: achievement?.group_id ?? '',
-        options: [{ value: null, label: '— без группы —' }].concat(
+        options: [{ value: null, label: t('ach.noGroupOption') }].concat(
           groups.map((group) => ({ value: group.id, label: group.name }))
         ),
       },
-      { name: 'icon_id', label: 'Иконка', type: 'media', kind: 'image', value: achievement?.icon_id ?? null },
+      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: achievement?.icon_id ?? null },
       {
         name: 'sound_id',
-        label: 'Звук при получении',
+        label: t('ach.unlockSound'),
         type: 'media',
         kind: 'audio',
         value: achievement?.sound_id ?? null,
-        help: 'если не выбрать — сыграет звук по умолчанию из настроек',
+        help: t('ach.unlockSoundHelp'),
       },
       {
         name: 'metric_id',
-        label: 'Привязать к метрике',
+        label: t('ach.bindMetric'),
         type: 'select',
         value: achievement?.metric_id ?? '',
-        options: [{ value: null, label: '— без метрики —' }].concat(
+        options: [{ value: null, label: t('ach.noMetricOption') }].concat(
           metrics.map((metric) => ({
             value: metric.id,
-            label: `${metric.name} (сейчас ${formatNumber(metric.value)} ${metric.unit})`,
+            label: t('ach.metricNow', {
+              name: metric.name,
+              value: formatNumber(metric.value),
+              unit: metric.unit,
+            }),
           }))
         ),
       },
       {
         name: 'metric_target',
-        label: 'Порог метрики',
+        label: t('ach.metricTarget'),
         type: 'number',
         value: achievement?.metric_target ?? '',
-        help: 'ачивка откроется сама, когда метрика дойдёт до этого значения',
+        help: t('ach.metricTargetHelp'),
       },
     ],
     onSubmit: async (values) => {
-      if (!values.title.trim()) throw new Error('Название обязательно');
+      if (!values.title.trim()) throw new Error(t('common.titleRequired'));
       if (editing) await api.updateAchievement(achievement.id, values);
       else await api.createAchievement(values);
-      toast('Записано', values.title);
+      toast(t('common.saved'), values.title);
       await onDone();
     },
   });
@@ -284,14 +289,14 @@ export function achievementForm(achievement, groups, metrics, onDone) {
 
 function groupForm(group, onDone) {
   formModal({
-    title: group ? 'Правка группы' : 'Новая группа',
+    title: group ? t('ach.groupForm') : t('ach.newGroup'),
     fields: [
-      { name: 'name', label: 'Название', value: group?.name || '' },
-      { name: 'description', label: 'Описание', type: 'textarea', rows: 3, value: group?.description || '' },
-      { name: 'icon_id', label: 'Иконка', type: 'media', kind: 'image', value: group?.icon_id ?? null },
+      { name: 'name', label: t('common.title'), value: group?.name || '' },
+      { name: 'description', label: t('common.description'), type: 'textarea', rows: 3, value: group?.description || '' },
+      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: group?.icon_id ?? null },
     ],
     onSubmit: async (values) => {
-      if (!values.name.trim()) throw new Error('Название обязательно');
+      if (!values.name.trim()) throw new Error(t('common.titleRequired'));
       if (group) await api.updateGroup(group.id, values);
       else await api.createGroup(values);
       await onDone();

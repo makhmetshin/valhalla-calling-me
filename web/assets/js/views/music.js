@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, emptyState, mount } from '../core/dom.js';
 import { formatBytes, formatDateTime } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { closeModal, formModal, openModal } from '../core/modal.js';
 import { anchor, focusEntity } from '../core/navigation.js';
@@ -24,9 +25,9 @@ export async function renderMusic(container, params = {}) {
   const tracks = playlist();
   const reload = () => renderMusic(container);
 
-  setHeader('Музыка', `${tracks.length} в списке`, [
-    el('button', { class: 'btn', text: 'Из библиотеки', onclick: () => libraryModal(reload) }),
-    el('button', { class: 'btn primary', text: 'Загрузить', onclick: () => upload(reload) }),
+  setHeader(t('nav.music'), t('music.subtitle', { count: tracks.length }), [
+    el('button', { class: 'btn', text: t('music.fromLibrary'), onclick: () => libraryModal(reload) }),
+    el('button', { class: 'btn primary', text: t('music.upload'), onclick: () => upload(reload) }),
   ]);
 
   if (!tracks.length) {
@@ -34,12 +35,12 @@ export async function renderMusic(container, params = {}) {
       container,
       volumeBlock(),
       emptyState(
-        'Тишина в чертоге',
-        'Загрузи свои файлы или положи их руками в vault/audio и нажми «Из библиотеки».',
+        t('music.emptyTitle'),
+        t('music.emptyHint'),
         el('button', {
           class: 'btn primary',
           style: { marginTop: '14px' },
-          text: 'Загрузить музыку',
+          text: t('music.uploadMusic'),
           onclick: () => upload(reload),
         })
       )
@@ -75,12 +76,12 @@ function volumeBlock() {
     el(
       'label',
       { class: 'field' },
-      el('span', { text: 'Громкость музыки' }),
+      el('span', { text: t('music.volume') }),
       slider,
       el('p', {
         class: 'muted',
         style: { margin: '6px 0 0' },
-        text: 'Файлы лежат в vault/audio — их можно заменить руками, список переживёт переустановку.',
+        text: t('music.volumeHint'),
       })
     )
   );
@@ -92,7 +93,7 @@ function row(track, index, tracks, reload) {
   const playing = isCurrent && isPlaying();
 
   const meta = [
-    track.play_count ? `сыграно ${track.play_count}` : 'ещё не звучала',
+    track.play_count ? t('music.played', { count: track.play_count }) : t('music.neverPlayed'),
     track.last_played_at ? formatDateTime(track.last_played_at) : null,
     formatBytes(track.asset.size_bytes),
   ].filter(Boolean);
@@ -111,7 +112,7 @@ function row(track, index, tracks, reload) {
     { class: `list-item${isCurrent ? ' now' : ''}`, dataset: anchor('track', track.id) },
     el('button', {
       class: `player-btn${playing ? ' main' : ''}`,
-      title: playing ? 'Пауза' : 'Играть',
+      title: playing ? t('music.pause') : t('music.play'),
       text: playing ? '❚❚' : '▶',
       onclick: () => (isCurrent ? toggle() : playTrack(track.id)),
     }),
@@ -125,23 +126,23 @@ function row(track, index, tracks, reload) {
     el('button', { class: 'btn sm ghost', text: '↓', onclick: () => move(1) }),
     el('button', {
       class: 'btn sm ghost',
-      text: 'Связи',
+      text: t('common.links'),
       onclick: () => openLinks('track', track.id, track.title),
     }),
-    el('button', { class: 'btn sm ghost', text: 'Править', onclick: () => trackForm(track, reload) }),
+    el('button', { class: 'btn sm ghost', text: t('common.edit'), onclick: () => trackForm(track, reload) }),
     el('button', { class: 'btn sm ghost danger', text: '✕', onclick: () => removeTrack(track, reload) })
   );
 }
 
 function trackForm(track, onDone) {
   formModal({
-    title: 'Правка записи',
+    title: t('music.trackForm'),
     fields: [
-      { name: 'title', label: 'Название', value: track.title },
-      { name: 'artist', label: 'Исполнитель', value: track.artist },
+      { name: 'title', label: t('common.title'), value: track.title },
+      { name: 'artist', label: t('music.artist'), value: track.artist },
     ],
     onSubmit: async (values) => {
-      if (!values.title.trim()) throw new Error('Название обязательно');
+      if (!values.title.trim()) throw new Error(t('common.titleRequired'));
       await api.updateTrack(track.id, values);
       await onDone();
     },
@@ -155,23 +156,23 @@ function removeTrack(track, onDone) {
       await api.deleteTrack(track.id, withFile);
       await onDone();
     } catch (error) {
-      toast('Не удалилось', error.message, { tone: 'warn' });
+      toast(t('music.removeFailed'), error.message, { tone: 'warn' });
     }
   };
 
   openModal({
-    title: 'Убрать запись',
+    title: t('music.removeTitle'),
     subtitle: track.title,
     content: [
       el('p', {
         class: 'muted',
-        text: 'Можно убрать только из списка — файл останется в vault/audio и его можно вернуть.',
+        text: t('music.removeHint'),
       }),
     ],
     actions: [
-      el('button', { class: 'btn ghost', text: 'Отмена', onclick: closeModal }),
-      el('button', { class: 'btn ghost danger', text: 'Вместе с файлом', onclick: () => drop(true) }),
-      el('button', { class: 'btn primary', text: 'Только из списка', onclick: () => drop(false) }),
+      el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
+      el('button', { class: 'btn ghost danger', text: t('music.removeWithFile'), onclick: () => drop(true) }),
+      el('button', { class: 'btn primary', text: t('music.removeFromList'), onclick: () => drop(false) }),
     ],
   });
 }
@@ -187,12 +188,12 @@ function upload(onDone) {
         await api.uploadTrack(file, file.name.replace(/\.[^.]+$/, ''));
         added += 1;
       } catch (error) {
-        toast('Не загрузилось', `${file.name}: ${error.message}`, { tone: 'warn' });
+        toast(t('music.uploadFailed'), `${file.name}: ${error.message}`, { tone: 'warn' });
       }
     }
     if (added) {
       await loadMedia(true);
-      toast('В чертоге зазвучит', `добавлено: ${added}`);
+      toast(t('music.addedToast'), t('music.added', { count: added }));
       await onDone();
     }
   };
@@ -207,7 +208,7 @@ async function libraryModal(onDone) {
   const options = mediaOfKind('audio').filter((asset) => !taken.has(asset.id));
 
   if (!options.length) {
-    toast('Пусто', 'Всё аудио из библиотеки уже в списке', { tone: 'warn' });
+    toast(t('common.empty'), t('music.allTaken'), { tone: 'warn' });
     return;
   }
 
@@ -232,21 +233,23 @@ async function libraryModal(onDone) {
           { class: 'title' },
           el('div', { text: asset.title }),
           el('small', {
-            text: `${asset.origin === 'preset' ? 'пресет' : 'своё'} · ${formatBytes(asset.size_bytes)}`,
+            text: `${asset.origin === 'preset' ? t('common.preset') : t('common.own')} · ${formatBytes(
+              asset.size_bytes
+            )}`,
           })
         )
       )
     )
   );
 
-  const submit = el('button', { class: 'btn primary', text: 'Добавить' });
+  const submit = el('button', { class: 'btn primary', text: t('music.add') });
   openModal({
-    title: 'Из библиотеки',
+    title: t('music.fromLibrary'),
     subtitle: found.discovered
-      ? `в vault/audio найдено новых файлов: ${found.discovered}`
-      : 'аудио, которое уже лежит в хранилище',
+      ? t('music.libraryFound', { count: found.discovered })
+      : t('music.librarySubtitle'),
     content: [content],
-    actions: [el('button', { class: 'btn ghost', text: 'Отмена', onclick: closeModal }), submit],
+    actions: [el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }), submit],
   });
 
   submit.onclick = async () => {
@@ -256,7 +259,7 @@ async function libraryModal(onDone) {
       try {
         await api.createTrack({ asset_id: assetId });
       } catch (error) {
-        toast('Не добавилось', error.message, { tone: 'warn' });
+        toast(t('music.addFailed'), error.message, { tone: 'warn' });
       }
     }
     closeModal();

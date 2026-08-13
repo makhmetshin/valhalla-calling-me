@@ -2,6 +2,7 @@ import { api } from '../core/api.js';
 import { applyBackground } from '../core/backgrounds.js';
 import { el, mount } from '../core/dom.js';
 import { formatBytes } from '../core/format.js';
+import { LANGUAGES, t } from '../core/i18n.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { currentRoute, setHeader } from '../core/router.js';
 import { loadMedia, loadPreferences, mediaOfKind, savePreferences, state } from '../core/state.js';
@@ -12,56 +13,64 @@ import {
   applyAppearance,
   effectiveAccent,
   swatch,
+  themeHint,
+  themeTitle,
 } from '../core/themes.js';
 import { playUrl } from '../core/audio.js';
 import { toast } from '../core/toast.js';
 
 const LOOK_KEYS = ['theme.palette', 'theme.accent', 'theme.font_heading', 'theme.font_body'];
 
-const PAGES = [
-  { name: 'default', title: 'По умолчанию' },
-  { name: 'dashboard', title: 'Чертог' },
-  { name: 'achievements', title: 'Ачивки' },
-  { name: 'metrics', title: 'Метрики' },
-  { name: 'tasks', title: 'Чек-лист' },
-  { name: 'plan', title: 'План дня' },
-  { name: 'reminders', title: 'Напоминания' },
-  { name: 'codex', title: 'Кодекс' },
-  { name: 'music', title: 'Музыка' },
-  { name: 'settings', title: 'Настройки' },
+const PAGE_NAMES = [
+  'default',
+  'dashboard',
+  'achievements',
+  'metrics',
+  'tasks',
+  'plan',
+  'reminders',
+  'codex',
+  'music',
+  'settings',
 ];
+
+const pages = () =>
+  PAGE_NAMES.map((name) => ({
+    name,
+    title: name === 'default' ? t('set.pageDefault') : t(`nav.${name}`),
+  }));
 
 export async function renderSettings(container) {
   await Promise.all([loadMedia(true), loadPreferences(true)]);
   const [vault, backups] = await Promise.all([api.vault(), api.backups()]);
 
-  setHeader('Настройки', 'Всё лежит в папке vault — её можно унести с собой', [
+  setHeader(t('nav.settings'), t('set.subtitle'), [
     el('button', {
       class: 'btn',
-      text: 'Найти новые файлы',
+      text: t('set.scan'),
       onclick: async () => {
         const result = await api.scanVault();
         await loadMedia(true);
-        toast('Хранилище просмотрено', `новых файлов: ${result.discovered}`);
+        toast(t('set.scanned'), t('set.scanResult', { files: result.discovered, tracks: result.tracks }));
         renderSettings(container);
       },
     }),
     el('button', {
       class: 'btn',
-      text: 'Пересобрать пресеты',
+      text: t('set.rebuild'),
       onclick: async () => {
         const result = await api.syncPresets();
         await loadMedia(true);
-        toast('Пресеты обновлены', `новых файлов: ${result.discovered}`);
+        toast(t('set.rebuilt'), t('set.rebuildResult', { count: result.discovered }));
         renderSettings(container);
       },
     }),
     el('button', {
       class: 'btn primary',
-      text: 'Сделать бэкап',
+      text: t('set.backup'),
       onclick: async () => {
         const result = await api.createBackup();
-        toast('Архив собран', result.name);
+        toast(t('set.backupDone'), result.name);
         renderSettings(container);
       },
     }),
@@ -69,19 +78,21 @@ export async function renderSettings(container) {
 
   mount(
     container,
-    el('div', { class: 'section-title' }, el('span', { text: 'Звук' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.language') })),
+    languageBlock(),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.sound') })),
     soundBlock(container),
-    el('div', { class: 'section-title' }, el('span', { text: 'Темы' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.themes') })),
     themesBlock(container),
-    el('div', { class: 'section-title' }, el('span', { text: 'Облик' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.look') })),
     lookBlock(container),
-    el('div', { class: 'section-title' }, el('span', { text: 'Фоны страниц' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.backgrounds') })),
     backgroundsBlock(container),
-    el('div', { class: 'section-title' }, el('span', { text: 'Хранилище' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.storage') })),
     vaultBlock(vault, backups, container),
-    el('div', { class: 'section-title' }, el('span', { text: 'Библиотека медиа' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.library') })),
     mediaBlock(container),
-    el('div', { class: 'section-title' }, el('span', { text: 'Сброс' })),
+    el('div', { class: 'section-title' }, el('span', { text: t('set.reset') })),
     resetBlock()
   );
 }
@@ -100,7 +111,7 @@ function soundBlock(container) {
   const preview = (key) => {
     const asset = mediaOfKind('audio').find((item) => item.id === state.preferences[key]);
     if (!asset) {
-      toast('Звук не выбран', 'Положи свои файлы в vault/audio и выбери их здесь', { tone: 'warn' });
+      toast(t('set.soundMissing'), t('set.soundMissingHint'), { tone: 'warn' });
       return;
     }
     playUrl(asset.url);
@@ -123,7 +134,7 @@ function soundBlock(container) {
     const select = el(
       'select',
       {},
-      [el('option', { value: '', text: '— без звука —' })].concat(
+      [el('option', { value: '', text: t('set.noSound') })].concat(
         mediaOfKind('audio').map((asset) =>
           el('option', {
             value: String(asset.id),
@@ -147,26 +158,26 @@ function soundBlock(container) {
         select,
         el('button', { class: 'btn sm', text: '▶', onclick: () => preview(key) })
       ),
-      'свои звуки клади в vault/audio — коробочных больше нет'
+      t('set.soundHint')
     );
   };
 
   return el(
     'div',
     { class: 'card grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' } },
-    field('Громкость', volume),
-    soundSelect('audio.unlock_sound_id', 'Звук ачивки'),
-    soundSelect('audio.reminder_sound_id', 'Звук напоминания'),
+    field(t('set.volume'), volume),
+    soundSelect('audio.unlock_sound_id', t('set.unlockSound')),
+    soundSelect('audio.reminder_sound_id', t('set.reminderSound')),
     el(
       'div',
       { style: { alignSelf: 'end' } },
       el('button', {
         class: 'btn',
-        text: 'Загрузить свой звук',
+        text: t('set.uploadSound'),
         onclick: () =>
           formModal({
-            title: 'Свой звук',
-            fields: [{ name: 'sound', label: 'Аудио', type: 'media', kind: 'audio', value: null }],
+            title: t('set.ownSound'),
+            fields: [{ name: 'sound', label: t('set.audio'), type: 'media', kind: 'audio', value: null }],
             onSubmit: async () => {
               await loadMedia(true);
               await renderSettings(container);
@@ -174,6 +185,30 @@ function soundBlock(container) {
           }),
       })
     )
+  );
+}
+
+function languageBlock() {
+  const current = state.preferences['ui.language'] || 'ru';
+  return el(
+    'div',
+    { class: 'card row between' },
+    el(
+      'div',
+      { class: 'chips' },
+      LANGUAGES.map((item) =>
+        el('button', {
+          class: `chip${item.code === current ? ' on' : ''}`,
+          text: item.title,
+          onclick: async () => {
+            if (item.code === current) return;
+            await savePreferences({ 'ui.language': item.code });
+            window.location.reload();
+          },
+        })
+      )
+    ),
+    el('p', { class: 'muted', style: { margin: '0' }, text: t('set.languageHint') })
   );
 }
 
@@ -195,8 +230,8 @@ function themesBlock(container) {
           },
         },
         swatch(theme),
-        el('strong', { text: theme.title }),
-        el('span', { text: theme.hint })
+        el('strong', { text: themeTitle(theme) }),
+        el('span', { text: themeHint(theme) })
       )
     )
   );
@@ -219,7 +254,7 @@ function lookBlock(container) {
     const select = el(
       'select',
       {},
-      [el('option', { value: '', text: '— стандартный —' })].concat(
+      [el('option', { value: '', text: t('set.fontDefault') })].concat(
         fonts.map((asset) =>
           el('option', {
             value: asset.url,
@@ -233,25 +268,27 @@ function lookBlock(container) {
       await savePreferences({ [key]: select.value || '' });
       applyAppearance();
     };
-    return field(label, select, 'файлы шрифтов клади в vault/fonts');
+    return field(label, select, t('set.fontHint'));
   };
 
   return el(
     'div',
     { class: 'card grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' } },
     field(
-      'Акцентный цвет',
+      t('set.accent'),
       accent,
-      accentOverride() ? 'свой цвет поверх темы' : `цвет темы «${activeTheme().title}»`
+      accentOverride()
+        ? t('set.accentOwn')
+        : t('set.accentTheme', { name: themeTitle(activeTheme()) })
     ),
-    fontSelect('theme.font_heading', 'Шрифт заголовков'),
-    fontSelect('theme.font_body', 'Шрифт текста'),
+    fontSelect('theme.font_heading', t('set.fontHeading')),
+    fontSelect('theme.font_body', t('set.fontBody')),
     el(
       'div',
       { class: 'row', style: { alignSelf: 'end' } },
       el('button', {
         class: 'btn',
-        text: 'Цвет темы',
+        text: t('set.themeColor'),
         disabled: !accentOverride(),
         onclick: async () => {
           await savePreferences({ 'theme.accent': '' });
@@ -261,7 +298,7 @@ function lookBlock(container) {
       }),
       el('button', {
         class: 'btn ghost',
-        text: 'Сбросить облик',
+        text: t('set.resetLook'),
         onclick: async () => {
           await api.resetPreferences(LOOK_KEYS);
           await loadPreferences(true);
@@ -280,21 +317,21 @@ function resetBlock() {
     el(
       'div',
       {},
-      el('div', { class: 'card-title', text: 'Вернуть настройки по умолчанию' }),
+      el('div', { class: 'card-title', text: t('set.resetTitle') }),
       el('p', {
         class: 'muted',
         style: { margin: '6px 0 0' },
-        text: 'Тема, цвет, шрифты, фоны, громкость и звуки станут как при первом запуске. Ачивки, метрики, таски, кодекс, музыка и файлы останутся на месте.',
+        text: t('set.resetText'),
       })
     ),
     el('button', {
       class: 'btn danger',
-      text: 'Сбросить всё',
+      text: t('set.resetAll'),
       onclick: async () => {
         const yes = await confirmAction({
-          title: 'Сбросить настройки',
-          message: 'Тема, цвет, шрифты, фоны, громкость и звуки вернутся к исходным.',
-          confirmLabel: 'Сбросить',
+          title: t('set.resetConfirm'),
+          message: t('set.resetConfirmText'),
+          confirmLabel: t('set.resetAction'),
         });
         if (!yes) return;
         await api.resetPreferences();
@@ -310,7 +347,7 @@ function backgroundsBlock(container) {
   return el(
     'div',
     { class: 'grid cards' },
-    PAGES.map((page) => {
+    pages().map((page) => {
       const config = backgrounds[page.name];
       return el(
         'article',
@@ -319,7 +356,12 @@ function backgroundsBlock(container) {
           'div',
           { class: 'row between' },
           el('div', { class: 'card-title', text: page.title }),
-          config ? el('span', { class: 'tag on', text: config.kind === 'video' ? 'видео' : 'картинка' }) : null
+          config
+            ? el('span', {
+                class: 'tag on',
+                text: config.kind === 'video' ? t('set.kindVideo') : t('set.kindImage'),
+              })
+            : null
         ),
         config
           ? el('div', {
@@ -337,19 +379,19 @@ function backgroundsBlock(container) {
               },
               text: config.kind === 'video' ? config.url.split('/').pop() : '',
             })
-          : el('p', { class: 'muted', style: { marginTop: '10px' }, text: 'фон не задан' }),
+          : el('p', { class: 'muted', style: { marginTop: '10px' }, text: t('set.noBackground') }),
         el(
           'div',
           { class: 'card-foot' },
           el('button', {
             class: 'btn sm',
-            text: 'Задать',
+            text: t('set.setBackground'),
             onclick: () => backgroundForm(page, config, container),
           }),
           config
             ? el('button', {
                 class: 'btn sm ghost danger',
-                text: 'Убрать',
+                text: t('set.dropBackground'),
                 onclick: async () => {
                   const next = { ...(state.preferences.backgrounds || {}) };
                   delete next[page.name];
@@ -367,28 +409,28 @@ function backgroundsBlock(container) {
 
 function backgroundForm(page, config, container) {
   formModal({
-    title: `Фон — ${page.title}`,
-    subtitle: 'Картинка или видео. Видео кладётся в vault/video.',
+    title: t('set.backgroundFor', { page: page.title }),
+    subtitle: t('set.backgroundHint'),
     fields: [
       {
         name: 'kind',
-        label: 'Тип',
+        label: t('set.kind'),
         type: 'select',
         value: config?.kind || 'image',
         options: [
-          { value: 'image', label: 'изображение' },
-          { value: 'video', label: 'видео' },
+          { value: 'image', label: t('set.kindImage') },
+          { value: 'video', label: t('set.kindVideo') },
         ],
       },
-      { name: 'image_id', label: 'Изображение', type: 'media', kind: 'image', value: config?.kind === 'image' ? config.media_id : null },
-      { name: 'video_id', label: 'Видео', type: 'media', kind: 'video', value: config?.kind === 'video' ? config.media_id : null },
-      { name: 'dim', label: 'Яркость (0—1)', type: 'number', step: 0.05, value: config?.dim ?? 0.7 },
-      { name: 'blur', label: 'Размытие, px', type: 'number', step: 1, value: config?.blur ?? 0 },
+      { name: 'image_id', label: t('set.image'), type: 'media', kind: 'image', value: config?.kind === 'image' ? config.media_id : null },
+      { name: 'video_id', label: t('set.video'), type: 'media', kind: 'video', value: config?.kind === 'video' ? config.media_id : null },
+      { name: 'dim', label: t('set.dim'), type: 'number', step: 0.05, value: config?.dim ?? 0.7 },
+      { name: 'blur', label: t('set.blur'), type: 'number', step: 1, value: config?.blur ?? 0 },
     ],
     onSubmit: async (values) => {
       const mediaId = values.kind === 'video' ? values.video_id : values.image_id;
       const asset = state.media.find((item) => item.id === mediaId);
-      if (!asset) throw new Error('Выбери файл');
+      if (!asset) throw new Error(t('set.pickFile'));
       const next = { ...(state.preferences.backgrounds || {}) };
       next[page.name] = {
         kind: values.kind,
@@ -412,11 +454,11 @@ function vaultBlock(vault, backups, container) {
     el(
       'div',
       { class: 'grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' } },
-      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.database_bytes) }), el('span', { text: 'база' })),
-      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.media_bytes.image) }), el('span', { text: 'картинки' })),
-      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.media_bytes.audio) }), el('span', { text: 'звук' })),
-      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.media_bytes.video) }), el('span', { text: 'видео' })),
-      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.disk_free_bytes) }), el('span', { text: 'свободно' }))
+      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.database_bytes) }), el('span', { text: t('set.database') })),
+      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.media_bytes.image) }), el('span', { text: t('set.images') })),
+      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.media_bytes.audio) }), el('span', { text: t('set.audioSize') })),
+      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.media_bytes.video) }), el('span', { text: t('set.videoSize') })),
+      el('div', { class: 'stat' }, el('b', { text: formatBytes(vault.disk_free_bytes) }), el('span', { text: t('set.free') }))
     ),
     backups.length
       ? el(
@@ -429,16 +471,16 @@ function vaultBlock(vault, backups, container) {
               el('div', { class: 'title' }, el('div', { text: backup.name }), el('small', { text: `${backup.created_at} · ${formatBytes(backup.size_bytes)}` })),
               el('button', {
                 class: 'btn sm',
-                text: 'Восстановить',
+                text: t('set.restore'),
                 onclick: async () => {
                   const yes = await confirmAction({
-                    title: 'Развернуть архив',
-                    message: 'Данные из архива лягут поверх текущих. После этого перезапусти приложение.',
-                    confirmLabel: 'Развернуть',
+                    title: t('set.restoreTitle'),
+                    message: t('set.restoreText'),
+                    confirmLabel: t('set.restoreAction'),
                   });
                   if (!yes) return;
                   await api.restoreBackup(backup.name);
-                  toast('Развёрнуто', 'Перезапусти приложение');
+                  toast(t('set.restored'), t('set.restartHint'));
                 },
               }),
               el('button', {
@@ -446,8 +488,8 @@ function vaultBlock(vault, backups, container) {
                 text: '✕',
                 onclick: async () => {
                   const yes = await confirmAction({
-                    title: 'Удалить архив',
-                    message: `${backup.name} исчезнет из vault/backups.`,
+                    title: t('set.dropBackupTitle'),
+                    message: t('set.dropBackupText', { name: backup.name }),
                   });
                   if (!yes) return;
                   await api.deleteBackup(backup.name);
@@ -457,7 +499,7 @@ function vaultBlock(vault, backups, container) {
             )
           )
         )
-      : el('p', { class: 'muted', text: 'Архивов пока нет' })
+      : el('p', { class: 'muted', text: t('set.noBackups') })
   );
 }
 
@@ -468,7 +510,11 @@ function mediaBlock(container) {
   return el(
     'div',
     { class: 'card stack' },
-    el('p', { class: 'muted', text: `пресетов: ${presets.length} · своего: ${uploads.length}` }),
+    el('p', {
+      class: 'muted',
+      text: t('set.libraryCount', { presets: presets.length, uploads: uploads.length }),
+    }),
+    el('p', { class: 'muted', text: t('set.folderHint') }),
     uploads.length
       ? el(
           'div',
@@ -483,11 +529,11 @@ function mediaBlock(container) {
               el('div', { class: 'title' }, el('div', { text: asset.title }), el('small', { text: `${asset.kind} · ${formatBytes(asset.size_bytes)}` })),
               el('button', {
                 class: 'btn sm ghost',
-                text: 'Имя',
+                text: t('set.rename'),
                 onclick: () =>
                   formModal({
-                    title: 'Переименовать',
-                    fields: [{ name: 'title', label: 'Название', value: asset.title }],
+                    title: t('set.renameTitle'),
+                    fields: [{ name: 'title', label: t('common.title'), value: asset.title }],
                     onSubmit: async (values) => {
                       await api.renameMedia(asset.id, values.title);
                       await loadMedia(true);
@@ -500,8 +546,8 @@ function mediaBlock(container) {
                 text: '✕',
                 onclick: async () => {
                   const yes = await confirmAction({
-                    title: 'Удалить файл',
-                    message: `«${asset.title}» будет стёрт с диска.`,
+                    title: t('set.dropFileTitle'),
+                    message: t('set.dropFileText', { name: asset.title }),
                   });
                   if (!yes) return;
                   try {
@@ -509,13 +555,13 @@ function mediaBlock(container) {
                     await loadMedia(true);
                     renderSettings(container);
                   } catch (error) {
-                    toast('Не удалилось', error.message, { tone: 'warn' });
+                    toast(t('set.dropFileFailed'), error.message, { tone: 'warn' });
                   }
                 },
               })
             )
           )
         )
-      : el('p', { class: 'muted', text: 'Своих файлов ещё нет — загрузи их через любую форму с иконкой.' })
+      : el('p', { class: 'muted', text: t('set.noOwnFiles') })
   );
 }

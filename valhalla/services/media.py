@@ -140,22 +140,23 @@ def checksum_of(path: Path) -> str:
 def scan_vault(session: Session) -> int:
     settings = get_settings()
     known = {
-        (str(asset.kind), asset.relative_path)
+        (str(asset.kind), asset.relative_path): asset
         for asset in session.execute(
             select(MediaAsset).where(MediaAsset.origin == MediaOrigin.UPLOAD)
         ).scalars()
     }
 
     discovered = 0
+    scanned: set[str] = set()
+    present: set[tuple[str, str]] = set()
+
     for kind, directory in KIND_DIRECTORIES.items():
         root = settings.vault_dir / directory
         if not root.exists():
             continue
+        scanned.add(str(kind))
         for path in sorted(root.rglob("*")):
             if not path.is_file():
-                continue
-            relative_path = path.relative_to(root).as_posix()
-            if (str(kind), relative_path) in known:
                 continue
             mime_type = guess_mime_type(path.name)
             try:
@@ -163,18 +164,26 @@ def scan_vault(session: Session) -> int:
                     continue
             except ValidationError:
                 continue
+            key = (str(kind), path.relative_to(root).as_posix())
+            present.add(key)
+            if key in known:
+                continue
             session.add(
                 MediaAsset(
                     kind=kind,
                     origin=MediaOrigin.UPLOAD,
                     title=readable_name(path.name),
-                    relative_path=relative_path,
+                    relative_path=key[1],
                     mime_type=mime_type,
                     size_bytes=path.stat().st_size,
                     checksum=checksum_of(path),
                 )
             )
             discovered += 1
+
+    for key, asset in known.items():
+        if key[0] in scanned and key not in present:
+            session.delete(asset)
 
     session.flush()
     return discovered

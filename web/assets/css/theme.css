@@ -162,3 +162,12 @@ p {
 ::selection {
   background: rgb(var(--accent-rgb) / 0.32);
 }
+
+button,
+.rail,
+.tag,
+.units,
+.badge,
+.swatch {
+  user-select: none;
+}

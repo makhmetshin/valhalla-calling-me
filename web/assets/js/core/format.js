@@ -1,57 +1,69 @@
-const DATE_FORMAT = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
-const DATETIME_FORMAT = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: 'short',
-  hour: '2-digit',
-  minute: '2-digit',
-});
+import { locale, t } from './i18n.js';
 
-export const CADENCE_LABELS = {
-  once: 'один раз',
-  every_15_minutes: 'каждые 15 минут',
-  every_hour: 'каждый час',
-  every_3_hours: 'каждые 3 часа',
-  every_6_hours: 'каждые 6 часов',
-  daily: 'раз в день',
-};
+export const CADENCE_KEYS = [
+  'once',
+  'every_15_minutes',
+  'every_hour',
+  'every_3_hours',
+  'every_6_hours',
+  'daily',
+];
 
-export const ENTITY_LABELS = {
-  achievement: 'ачивка',
-  achievement_group: 'группа',
-  metric: 'метрика',
-  task: 'таска',
-  day_plan: 'план',
-  reminder: 'напоминание',
-  codex_chapter: 'глава',
-  codex_entry: 'страница',
-  track: 'музыка',
-};
+export const COLLECTION_KEYS = ['icons', 'backgrounds', 'playlist', 'uploads'];
 
-export const MEDIA_COLLECTIONS = {
-  icons: 'Иконки',
-  backgrounds: 'Фоны',
-  uploads: 'Свои',
-};
+export const ENTITY_KINDS = [
+  'achievement',
+  'achievement_group',
+  'metric',
+  'task',
+  'day_plan',
+  'reminder',
+  'codex_chapter',
+  'codex_entry',
+  'track',
+];
 
-export const TASK_STATES = {
-  open: 'открыта',
-  active: 'в бою',
-  done: 'исполнена',
-  abandoned: 'оставлена',
-};
+export function cadenceLabel(value) {
+  return t(`cadence.${value}`);
+}
+
+export function entityLabel(kind) {
+  return t(`kind.${kind}`);
+}
+
+export function collectionLabel(name) {
+  return t(`collection.${name}`);
+}
+
+export function taskStateLabel(value) {
+  return t(`state.${value}`);
+}
+
+function dateFormat() {
+  return new Intl.DateTimeFormat(locale(), { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function dateTimeFormat() {
+  return new Intl.DateTimeFormat(locale(), {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export function formatDate(value) {
-  if (!value) return '—';
-  return DATE_FORMAT.format(new Date(value));
+  if (!value) return t('common.dash');
+  return dateFormat().format(new Date(value));
 }
 
 export function formatDateTime(value) {
-  if (!value) return '—';
-  return DATETIME_FORMAT.format(new Date(value));
+  if (!value) return t('common.dash');
+  return dateTimeFormat().format(new Date(value));
 }
 
 export function formatNumber(value) {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return t('common.dash');
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');
 }
 
@@ -75,8 +87,9 @@ export function toIsoLocal(date) {
 export function minutesToHuman(minutes) {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  if (!hours) return `${rest} мин`;
-  return rest ? `${hours} ч ${rest} мин` : `${hours} ч`;
+  const short = { h: t('common.hoursShort'), m: t('common.minutesShort') };
+  if (!hours) return `${rest} ${short.m}`;
+  return rest ? `${hours} ${short.h} ${rest} ${short.m}` : `${hours} ${short.h}`;
 }
 
 export function renderProse(source) {

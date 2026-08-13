@@ -1,5 +1,6 @@
 import { el } from './dom.js';
-import { ENTITY_LABELS } from './format.js';
+import { entityLabel } from './format.js';
+import { t } from './i18n.js';
 import { navigate } from './router.js';
 
 const ROUTE_BY_KIND = {
@@ -33,13 +34,13 @@ export function entityLink(kind, id, label, detail) {
     'button',
     {
       class: 'link-pill',
-      title: `Открыть: ${ENTITY_LABELS[kind] || kind}`,
+      title: t('common.openThing', { kind: entityLabel(kind) }),
       onclick: (event) => {
         event.stopPropagation();
         openEntity(kind, id);
       },
     },
-    el('em', { text: ENTITY_LABELS[kind] || kind }),
+    el('em', { text: entityLabel(kind) }),
     el('span', { text: label }),
     detail ? el('small', { text: detail }) : null
   );
