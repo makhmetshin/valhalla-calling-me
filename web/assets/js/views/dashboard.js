@@ -186,9 +186,12 @@ function planBlock(plan) {
       plan.slots.map((slot) => {
         const from = toMinutes(slot.starts_at);
         const to = toMinutes(slot.ends_at);
+        const isDone = Boolean(slot.task) && slot.task.state === 'done';
         return el(
           'div',
-          { class: `slot${nowMinutes >= from && nowMinutes < to ? ' now' : ''}` },
+          {
+            class: `slot${nowMinutes >= from && nowMinutes < to ? ' now' : ''}${isDone ? ' done' : ''}`,
+          },
           el('time', { text: `${slot.starts_at.slice(0, 5)} — ${slot.ends_at.slice(0, 5)}` }),
           el(
             'div',

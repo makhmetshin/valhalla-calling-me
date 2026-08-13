@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { clear, el, mount } from './dom.js';
-import { ENTITY_LABELS } from './format.js';
+import { ENTITY_LABELS, MEDIA_COLLECTIONS } from './format.js';
 import { loadMedia, mediaById, mediaOfKind } from './state.js';
 import { playUrl } from './audio.js';
 import { toast } from './toast.js';
@@ -254,7 +254,7 @@ function mediaPicker(field) {
   const kind = field.kind || 'image';
   let selected = field.value ?? null;
 
-  const grid = el('div', { class: 'picker-grid' });
+  const grid = el('div', { class: 'picker-body' });
   const search = el('input', { type: 'search', placeholder: 'поиск по названию' });
   const file = el('input', {
     type: 'file',
@@ -287,47 +287,71 @@ function mediaPicker(field) {
     }
   };
 
+  function tile(asset) {
+    return el(
+      'button',
+      {
+        class: selected === asset.id ? 'on' : '',
+        title: `${asset.title} (${asset.origin === 'preset' ? 'пресет' : 'своё'})`,
+        onclick: (event) => {
+          event.preventDefault();
+          selected = asset.id;
+          if (kind === 'audio') playUrl(asset.url);
+          render();
+        },
+      },
+      kind === 'image'
+        ? el('img', { src: asset.url, alt: asset.title, loading: 'lazy' })
+        : el('span', {
+            class: 'muted',
+            style: { fontSize: '10px', padding: '4px', display: 'block' },
+            text: asset.title.slice(0, 18),
+          })
+    );
+  }
+
   function render() {
     const query = search.value.trim().toLowerCase();
     const assets = mediaOfKind(kind).filter(
       (asset) => !query || asset.title.toLowerCase().includes(query)
     );
 
-    mount(
-      grid,
-      el('button', {
-        class: `none${selected === null ? ' on' : ''}`,
-        text: 'нет',
-        title: 'Без изображения',
-        onclick: (event) => {
-          event.preventDefault();
-          selected = null;
-          render();
-        },
-      }),
-      assets.map((asset) =>
+    const groups = new Map();
+    for (const asset of assets) {
+      const name = MEDIA_COLLECTIONS[asset.collection] ? asset.collection : 'uploads';
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name).push(asset);
+    }
+
+    const blank = el('button', {
+      class: `none${selected === null ? ' on' : ''}`,
+      text: 'нет',
+      title: 'Без изображения',
+      onclick: (event) => {
+        event.preventDefault();
+        selected = null;
+        render();
+      },
+    });
+
+    const sections = [];
+    for (const name of Object.keys(MEDIA_COLLECTIONS)) {
+      const items = groups.get(name);
+      if (!items) continue;
+      const tiles = items.map(tile);
+      if (!sections.length) tiles.unshift(blank);
+      sections.push(
         el(
-          'button',
-          {
-            class: selected === asset.id ? 'on' : '',
-            title: `${asset.title} (${asset.origin === 'preset' ? 'пресет' : 'своё'})`,
-            onclick: (event) => {
-              event.preventDefault();
-              selected = asset.id;
-              if (kind === 'audio') playUrl(asset.url);
-              render();
-            },
-          },
-          kind === 'image'
-            ? el('img', { src: asset.url, alt: asset.title, loading: 'lazy' })
-            : el('span', {
-                class: 'muted',
-                style: { fontSize: '10px', padding: '4px', display: 'block' },
-                text: asset.title.slice(0, 18),
-              })
-        )
-      )
-    );
+          'div',
+          { class: 'picker-group' },
+          el('span', { text: MEDIA_COLLECTIONS[name] }),
+          el('span', { class: 'muted', text: items.length })
+        ),
+        el('div', { class: 'picker-grid' }, tiles)
+      );
+    }
+
+    mount(grid, sections.length ? sections : [el('div', { class: 'picker-grid' }, blank)]);
   }
 
   search.oninput = render;

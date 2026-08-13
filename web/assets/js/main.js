@@ -19,15 +19,15 @@ import { renderSettings } from './views/settings.js';
 import { renderTasks } from './views/tasks.js';
 
 const ROUTES = [
-  { name: 'dashboard', title: 'Чертог', icon: '/presets/icons/yggdrasil.svg', render: renderDashboard },
-  { name: 'achievements', title: 'Ачивки', icon: '/presets/icons/valknut.svg', render: renderAchievements },
-  { name: 'metrics', title: 'Метрики', icon: '/presets/icons/rune-stone.svg', render: renderMetrics },
-  { name: 'tasks', title: 'Чек-лист', icon: '/presets/icons/axe.svg', render: renderTasks },
-  { name: 'plan', title: 'План дня', icon: '/presets/icons/longship.svg', render: renderPlan },
-  { name: 'reminders', title: 'Зовы', icon: '/presets/icons/raven.svg', render: renderReminders },
-  { name: 'codex', title: 'Кодекс', icon: '/presets/icons/wolf.svg', render: renderCodex },
-  { name: 'music', title: 'Музыка', icon: '/presets/icons/dawn-horn.svg', render: renderMusic },
-  { name: 'settings', title: 'Настройки', icon: '/presets/icons/vegvisir.svg', render: renderSettings },
+  { name: 'dashboard', title: 'Чертог', icon: 'yggdrasil', render: renderDashboard },
+  { name: 'achievements', title: 'Ачивки', icon: 'valknut', render: renderAchievements },
+  { name: 'metrics', title: 'Метрики', icon: 'rune-stone', render: renderMetrics },
+  { name: 'tasks', title: 'Чек-лист', icon: 'axe', render: renderTasks },
+  { name: 'plan', title: 'План дня', icon: 'longship', render: renderPlan },
+  { name: 'reminders', title: 'Зовы', icon: 'raven', render: renderReminders },
+  { name: 'codex', title: 'Кодекс', icon: 'wolf', render: renderCodex },
+  { name: 'music', title: 'Музыка', icon: 'dawn-horn', render: renderMusic },
+  { name: 'settings', title: 'Настройки', icon: 'vegvisir', render: renderSettings },
 ];
 
 const REMINDER_INTERVAL = 30000;

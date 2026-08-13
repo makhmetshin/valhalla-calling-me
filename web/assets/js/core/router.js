@@ -1,5 +1,5 @@
 import { applyBackground } from './backgrounds.js';
-import { clear, el, mount } from './dom.js';
+import { clear, el, glyph, mount } from './dom.js';
 import { toast } from './toast.js';
 
 const view = document.getElementById('view');
@@ -30,7 +30,7 @@ function renderNav() {
           dataset: { route: route.name },
           onclick: () => navigate(route.name),
         },
-        el('img', { src: route.icon, alt: '' }),
+        glyph(route.icon),
         el('span', { text: route.title }),
         el('span', { class: 'badge', dataset: { badge: route.name }, style: { display: 'none' } })
       )

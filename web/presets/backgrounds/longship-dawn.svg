@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="ld-sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#05080f"/><stop offset="0.42" stop-color="#152130"/>
+<stop offset="0.76" stop-color="#484a45"/><stop offset="1" stop-color="#8d7350"/></linearGradient>
+<linearGradient id="ld-water" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#5a4c3a"/><stop offset="0.22" stop-color="#22303e"/>
+<stop offset="1" stop-color="#060b12"/></linearGradient>
+<radialGradient id="ld-glow" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#e0b177" stop-opacity="0.5"/>
+<stop offset="1" stop-color="#e0b177" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1600" height="520" fill="url(#ld-sky)"/>
+<circle cx="880" cy="520" r="260" fill="url(#ld-glow)"/>
+<circle cx="880" cy="502" r="62" fill="#e8c58f" opacity="0.55"/>
+<g fill="#101a26" opacity="0.9">
+<path d="M0 520 L190 424 L330 494 L470 416 L610 520 Z"/>
+<path d="M1120 520 L1250 430 L1360 486 L1470 422 L1600 520 Z"/>
+</g>
+<rect y="520" width="1600" height="380" fill="url(#ld-water)"/>
+<g fill="#060a11">
+<path d="M596 512 L1004 512 L1046 574 L554 574 Z"/>
+<path d="M554 574 C640 626 960 626 1046 574 C980 622 620 622 554 574 Z"/>
+<path d="M554 574 L548 512 C548 486 586 480 598 500 C604 510 596 518 588 512"/>
+<path d="M1046 574 L1052 506 C1052 490 1036 486 1030 496"/>
+<path d="M796 512 L796 286"/>
+<path d="M690 300 L906 300 L906 470 L690 470 Z"/>
+</g>
+<g fill="none" stroke="#1d2733" stroke-width="7">
+<path d="M746 300 L746 470"/><path d="M846 300 L846 470"/>
+</g>
+<g fill="#0a1017" stroke="#c4a279" stroke-opacity="0.3" stroke-width="2">
+<circle cx="620" cy="536" r="16"/><circle cx="668" cy="536" r="16"/>
+<circle cx="716" cy="536" r="16"/><circle cx="764" cy="536" r="16"/>
+<circle cx="812" cy="536" r="16"/><circle cx="860" cy="536" r="16"/>
+<circle cx="908" cy="536" r="16"/><circle cx="956" cy="536" r="16"/>
+</g>
+<g stroke="#dcb888" stroke-opacity="0.14" fill="none" stroke-width="4">
+<path d="M700 640 C780 632 960 646 1060 638"/>
+<path d="M620 704 C760 694 980 710 1140 700"/>
+<path d="M520 786 C720 774 1020 792 1240 780"/>
+</g>
+<g stroke="#8fa6bb" stroke-opacity="0.1" fill="none" stroke-width="3">
+<path d="M0 660 C240 648 420 672 700 660"/>
+<path d="M1000 730 C1200 720 1400 742 1600 730"/>
+<path d="M0 840 C300 828 520 852 860 840"/>
+</g>
+</svg>
