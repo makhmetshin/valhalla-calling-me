@@ -1,8 +1,9 @@
 import { api } from '../core/api.js';
-import { clear, confirmDialog, el, mount } from '../core/dom.js';
+import { clear, el, mount } from '../core/dom.js';
 import { formatDateTime, renderProse } from '../core/format.js';
 import { openLinks } from '../core/links-ui.js';
-import { formModal } from '../core/modal.js';
+import { confirmAction, formModal } from '../core/modal.js';
+import { focusTarget } from '../core/navigation.js';
 import { setHeader } from '../core/router.js';
 import { loadMedia } from '../core/state.js';
 import { toast } from '../core/toast.js';
@@ -14,6 +15,7 @@ export async function renderCodex(container, params = {}) {
   await loadMedia();
   const outline = await api.codexOutline();
   const order = flatten(outline);
+  const focus = focusTarget(params);
 
   if (!order.length) {
     setHeader('Кодекс', 'Твой бестиарий и летопись', [
@@ -26,7 +28,7 @@ export async function renderCodex(container, params = {}) {
     return;
   }
 
-  let currentId = params.entryId || lastEntryId || order[0].id;
+  let currentId = entryFor(focus, order) || params.entryId || lastEntryId || order[0].id;
   if (!order.some((item) => item.id === currentId)) currentId = order[0].id;
 
   const nav = el('aside', { class: 'codex-nav' });
@@ -112,6 +114,24 @@ export async function renderCodex(container, params = {}) {
             event.stopPropagation();
             chapterForm(chapter, outline, () => renderCodex(container, { entryId: currentId }));
           },
+        }),
+        el('button', {
+          class: 'btn ghost sm danger',
+          text: '✕',
+          title: 'вырвать главу',
+          onclick: async (event) => {
+            event.stopPropagation();
+            const yes = await confirmAction({
+              title: 'Вырвать главу',
+              message: `«${chapter.title}» уйдёт вместе со своими страницами и вложенными главами.`,
+              hint: chapterHint(chapter),
+            });
+            if (!yes) return;
+            await api.deleteChapter(chapter.id);
+            lastEntryId = null;
+            toast('Глава вырвана', chapter.title);
+            renderCodex(container);
+          },
         })
       ),
       children
@@ -171,8 +191,13 @@ export async function renderCodex(container, params = {}) {
           el('button', {
             class: 'btn sm ghost danger',
             text: '✕',
+            title: 'вырвать страницу',
             onclick: async () => {
-              if (!confirmDialog(`Вырвать страницу «${entry.title}»?`)) return;
+              const yes = await confirmAction({
+                title: 'Вырвать страницу',
+                message: `«${entry.title}» исчезнет из кодекса.`,
+              });
+              if (!yes) return;
               await api.deleteEntry(entry.id);
               lastEntryId = null;
               renderCodex(container);
@@ -193,7 +218,12 @@ export async function renderCodex(container, params = {}) {
                 onclick: () => lightbox(image.url),
                 oncontextmenu: async (event) => {
                   event.preventDefault();
-                  if (!confirmDialog('Убрать картинку со страницы?')) return;
+                  const yes = await confirmAction({
+                    title: 'Убрать картинку',
+                    message: 'Картинка исчезнет со страницы, сам файл останется в библиотеке.',
+                    confirmLabel: 'Убрать',
+                  });
+                  if (!yes) return;
                   await api.updateEntry(entry.id, {
                     image_ids: entry.images.filter((item) => item.id !== image.id).map((item) => item.id),
                   });
@@ -246,6 +276,36 @@ export async function renderCodex(container, params = {}) {
 
   drawTree();
   await drawPage(0);
+}
+
+function chapterWeight(chapter) {
+  let chapters = 0;
+  let entries = chapter.entries.length;
+  for (const child of chapter.children) {
+    const nested = chapterWeight(child);
+    chapters += 1 + nested.chapters;
+    entries += nested.entries;
+  }
+  return { chapters, entries };
+}
+
+function chapterHint(chapter) {
+  const { chapters, entries } = chapterWeight(chapter);
+  const parts = [`страниц: ${entries}`];
+  if (chapters) parts.unshift(`вложенных глав: ${chapters}`);
+  return parts.join(' · ');
+}
+
+function entryFor(focus, order) {
+  if (!focus) return null;
+  if (focus.kind === 'codex_entry') {
+    return order.some((item) => item.id === focus.id) ? focus.id : null;
+  }
+  if (focus.kind === 'codex_chapter') {
+    const first = order.find((item) => item.chapterId === focus.id);
+    return first ? first.id : null;
+  }
+  return null;
 }
 
 function flatten(chapters, trail = []) {

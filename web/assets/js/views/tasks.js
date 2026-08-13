@@ -1,14 +1,14 @@
 import { api } from '../core/api.js';
-import { confirmDialog, el, emptyState, iconPlate, mount } from '../core/dom.js';
+import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { TASK_STATES, formatNumber } from '../core/format.js';
 import { openLinks } from '../core/links-ui.js';
-import { formModal } from '../core/modal.js';
+import { confirmAction, formModal } from '../core/modal.js';
+import { anchor, entityLink, focusEntity } from '../core/navigation.js';
 import { setHeader } from '../core/router.js';
 import { loadMedia } from '../core/state.js';
-import { playUrl, FALLBACK_TASK } from '../core/audio.js';
 import { celebrateAll, toast } from '../core/toast.js';
 
-export async function renderTasks(container) {
+export async function renderTasks(container, params = {}) {
   await loadMedia();
   const [tasks, achievements, metrics] = await Promise.all([
     api.tasks(),
@@ -56,6 +56,7 @@ export async function renderTasks(container) {
   section('Исполнено', done);
   section('Оставлено', dropped);
   mount(container, blocks);
+  focusEntity(container, params);
 }
 
 function row(task, achievements, metrics, container) {
@@ -64,35 +65,38 @@ function row(task, achievements, metrics, container) {
 
   const toggle = async () => {
     const result = await api.setTaskState(task.id, isDone ? 'open' : 'done');
-    if (!isDone) {
-      playUrl(FALLBACK_TASK);
-      celebrateAll(result.unlocked);
-    }
+    if (!isDone) celebrateAll(result.unlocked);
     reload();
   };
 
   const meta = [];
   if (task.units > 1) meta.push(`${task.units} ед. времени`);
-  if (task.achievement_id) {
-    const achievement = achievements.find((item) => item.id === task.achievement_id);
-    if (achievement) meta.push(`ачивка: ${achievement.title}`);
-  }
-  if (task.metric_id && task.metric_delta) {
-    const metric = metrics.find((item) => item.id === task.metric_id);
-    if (metric) meta.push(`${metric.name} ${task.metric_delta > 0 ? '+' : ''}${formatNumber(task.metric_delta)}`);
-  }
   if (task.state === 'active') meta.push(TASK_STATES.active);
+
+  const bonds = [];
+  const achievement = achievements.find((item) => item.id === task.achievement_id);
+  if (achievement) bonds.push(entityLink('achievement', achievement.id, achievement.title));
+  const metric = metrics.find((item) => item.id === task.metric_id);
+  if (metric && task.metric_delta) {
+    const sign = task.metric_delta > 0 ? '+' : '';
+    bonds.push(
+      entityLink('metric', metric.id, metric.name, `${sign}${formatNumber(task.metric_delta)}`)
+    );
+  }
 
   return el(
     'div',
-    { class: `list-item${isDone ? ' done' : ''}` },
+    { class: `list-item${isDone ? ' done' : ''}`, dataset: anchor('task', task.id) },
     el('button', { class: `checkmark${isDone ? ' on' : ''}`, text: '✓', onclick: toggle }),
     task.icon ? iconPlate(task.icon, 'sm') : null,
     el(
       'div',
       { class: 'title' },
       el('div', { text: task.title }),
-      meta.length || task.notes ? el('small', { text: [task.notes, meta.join(' · ')].filter(Boolean).join(' — ') }) : null
+      meta.length || task.notes
+        ? el('small', { text: [task.notes, meta.join(' · ')].filter(Boolean).join(' — ') })
+        : null,
+      bonds.length ? el('div', { class: 'chips', style: { marginTop: '6px' } }, bonds) : null
     ),
     !isDone
       ? el('button', {
@@ -117,8 +121,13 @@ function row(task, achievements, metrics, container) {
     el('button', {
       class: 'btn ghost sm danger',
       text: '✕',
+      title: 'стереть таску',
       onclick: async () => {
-        if (!confirmDialog(`Стереть «${task.title}»?`)) return;
+        const yes = await confirmAction({
+          title: 'Стереть таску',
+          message: `«${task.title}» исчезнет из чек-листа.`,
+        });
+        if (!yes) return;
         await api.deleteTask(task.id);
         reload();
       },

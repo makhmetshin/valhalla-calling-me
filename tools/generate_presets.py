@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 import math
-import random
-import struct
-import wave
 from pathlib import Path
 
 PRESETS_DIR = Path(__file__).resolve().parent.parent / "web" / "presets"
@@ -14,7 +11,6 @@ BACKGROUNDS_DIR = PRESETS_DIR / "backgrounds"
 INK = "#0d141d"
 STEEL = "#9fb6cd"
 FROST = "#6f9fc8"
-SAMPLE_RATE = 44100
 
 
 def icon(body: str, accent: str = STEEL) -> str:
@@ -263,147 +259,15 @@ def write_backgrounds() -> None:
         (BACKGROUNDS_DIR / f"{name}.svg").write_text(document, encoding="utf-8")
 
 
-def envelope(index: int, total: int, attack: float, release: float) -> float:
-    position = index / total
-    if position < attack:
-        return position / attack
-    if position > 1 - release:
-        return max(0.0, (1 - position) / release)
-    return 1.0
-
-
-def save_wave(name: str, samples: list[float]) -> None:
+def count_audio() -> int:
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
-    peak = max(1e-6, max(abs(value) for value in samples))
-    frames = b"".join(
-        struct.pack("<h", int(max(-1.0, min(1.0, value / peak)) * 30000)) for value in samples
-    )
-    with wave.open(str(AUDIO_DIR / f"{name}.wav"), "wb") as handle:
-        handle.setnchannels(1)
-        handle.setsampwidth(2)
-        handle.setframerate(SAMPLE_RATE)
-        handle.writeframes(frames)
-
-
-def horn_blast() -> list[float]:
-    duration = 2.1
-    total = int(SAMPLE_RATE * duration)
-    samples = []
-    for index in range(total):
-        t = index / SAMPLE_RATE
-        base = 116.0 * (1 + 0.035 * min(1.0, t / 0.6))
-        vibrato = 1 + 0.006 * math.sin(2 * math.pi * 5.2 * t)
-        value = (
-            0.60 * math.sin(2 * math.pi * base * vibrato * t)
-            + 0.34 * math.sin(4 * math.pi * base * vibrato * t)
-            + 0.18 * math.sin(6 * math.pi * base * vibrato * t)
-            + 0.09 * math.sin(8 * math.pi * base * vibrato * t)
-        )
-        samples.append(value * envelope(index, total, 0.09, 0.34))
-    return samples
-
-
-def victory_horns() -> list[float]:
-    segments = [(98.0, 0.85), (147.0, 1.55)]
-    samples: list[float] = []
-    for frequency, duration in segments:
-        total = int(SAMPLE_RATE * duration)
-        for index in range(total):
-            t = index / SAMPLE_RATE
-            value = (
-                0.55 * math.sin(2 * math.pi * frequency * t)
-                + 0.32 * math.sin(4 * math.pi * frequency * t)
-                + 0.16 * math.sin(6 * math.pi * frequency * t)
-                + 0.07 * math.sin(10 * math.pi * frequency * t)
-            )
-            samples.append(value * envelope(index, total, 0.07, 0.3))
-    return samples
-
-
-def war_drum() -> list[float]:
-    rng = random.Random(7)
-    samples: list[float] = []
-    for beat in range(3):
-        total = int(SAMPLE_RATE * 0.42)
-        for index in range(total):
-            t = index / SAMPLE_RATE
-            decay = math.exp(-9 * t)
-            body = math.sin(2 * math.pi * (62 - 18 * t) * t) * decay
-            skin = rng.uniform(-1, 1) * math.exp(-45 * t) * 0.35
-            samples.append((body + skin) * (1.0 - beat * 0.18))
-    return samples
-
-
-def rune_chime() -> list[float]:
-    duration = 1.9
-    total = int(SAMPLE_RATE * duration)
-    partials = [(784.0, 1.0), (1176.0, 0.5), (1568.0, 0.28), (2350.0, 0.12)]
-    samples = []
-    for index in range(total):
-        t = index / SAMPLE_RATE
-        value = sum(
-            amplitude * math.sin(2 * math.pi * frequency * t) * math.exp(-2.6 * t)
-            for frequency, amplitude in partials
-        )
-        samples.append(value * envelope(index, total, 0.005, 0.2))
-    return samples
-
-
-def ice_crack() -> list[float]:
-    rng = random.Random(19)
-    total = int(SAMPLE_RATE * 0.7)
-    samples = []
-    previous = 0.0
-    for index in range(total):
-        t = index / SAMPLE_RATE
-        burst = (
-            math.exp(-14 * t)
-            + 0.55 * math.exp(-40 * abs(t - 0.16))
-            + 0.4 * math.exp(-60 * abs(t - 0.31))
-        )
-        noise = rng.uniform(-1, 1)
-        previous = 0.62 * previous + 0.38 * noise
-        shimmer = 0.25 * math.sin(2 * math.pi * 2100 * t) * math.exp(-8 * t)
-        samples.append(((noise - previous) * burst) + shimmer)
-    return samples
-
-
-def raven_call() -> list[float]:
-    rng = random.Random(31)
-    samples: list[float] = []
-    for call in range(2):
-        total = int(SAMPLE_RATE * 0.28)
-        for index in range(total):
-            t = index / SAMPLE_RATE
-            frequency = 430 - 190 * t
-            rasp = 1 + 0.5 * math.sin(2 * math.pi * 58 * t)
-            noise = rng.uniform(-0.2, 0.2)
-            value = (math.sin(2 * math.pi * frequency * rasp * t) + noise) * math.exp(-6 * t)
-            samples.append(value * (1.0 - 0.25 * call))
-        samples.extend([0.0] * int(SAMPLE_RATE * 0.12))
-    return samples
-
-
-AUDIO = {
-    "horn-blast": horn_blast,
-    "victory-horns": victory_horns,
-    "war-drum": war_drum,
-    "rune-chime": rune_chime,
-    "ice-crack": ice_crack,
-    "raven-call": raven_call,
-}
-
-
-def write_audio() -> None:
-    for name, generator in AUDIO.items():
-        save_wave(name, generator())
+    return sum(1 for path in AUDIO_DIR.iterdir() if path.is_file())
 
 
 def main() -> None:
     write_icons()
     write_backgrounds()
-    write_audio()
-    print(f"icons: {len(ICONS)}, backgrounds: {len(BACKGROUNDS)}, audio: {len(AUDIO)}")
+    print(f"icons: {len(ICONS)}, backgrounds: {len(BACKGROUNDS)}, audio in folder: {count_audio()}")
 
 
 if __name__ == "__main__":

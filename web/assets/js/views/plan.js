@@ -1,13 +1,15 @@
 import { api } from '../core/api.js';
-import { confirmDialog, el, mount } from '../core/dom.js';
+import { el, mount } from '../core/dom.js';
 import { minutesToHuman, toIsoDate } from '../core/format.js';
 import { openLinks } from '../core/links-ui.js';
+import { confirmAction, formModal } from '../core/modal.js';
+import { entityLink, focusTarget } from '../core/navigation.js';
 import { setHeader } from '../core/router.js';
 import { toast } from '../core/toast.js';
 
 const UNIT_PRESETS = [10, 15, 20, 25, 30, 45, 60, 90];
 
-export async function renderPlan(container) {
+export async function renderPlan(container, params = {}) {
   const state = {
     date: toIsoDate(new Date()),
     unit: 25,
@@ -154,12 +156,17 @@ export async function renderPlan(container) {
       el('button', {
         class: 'btn',
         text: '+ Свободный блок',
-        onclick: () => {
-          const label = window.prompt('Что за блок?');
-          if (!label) return;
-          state.slots.push({ task_id: null, label, units: 1 });
-          draw();
-        },
+        onclick: () =>
+          formModal({
+            title: 'Свободный блок',
+            fields: [{ name: 'label', label: 'Что за блок', value: '' }],
+            submitLabel: 'Поставить',
+            onSubmit: (values) => {
+              if (!values.label.trim()) throw new Error('Название обязательно');
+              state.slots.push({ task_id: null, label: values.label, units: 1 });
+              draw();
+            },
+          }),
       })
     );
 
@@ -186,7 +193,13 @@ export async function renderPlan(container) {
                 'div',
                 { class: 'slot' },
                 el('time', { text: `${clock(slot.from)} — ${clock(slot.to)}` }),
-                el('div', { class: 'title', style: { flex: '1' } }, el('div', { text: slot.label })),
+                el(
+                  'div',
+                  { class: 'title', style: { flex: '1' } },
+                  slot.task_id
+                    ? entityLink('task', slot.task_id, slot.label)
+                    : el('div', { text: slot.label })
+                ),
                 el('span', { class: 'units', text: `${slot.units}×${state.unit}м` }),
                 stepper(slot.index),
                 el('button', {
@@ -220,7 +233,11 @@ export async function renderPlan(container) {
               class: 'btn ghost danger',
               text: 'Удалить план',
               onclick: async () => {
-                if (!confirmDialog('Стереть план этого дня?')) return;
+                const yes = await confirmAction({
+                  title: 'Стереть план',
+                  message: `План на ${state.date} исчезнет, таски останутся.`,
+                });
+                if (!yes) return;
                 await api.deletePlan(state.planId);
                 await loadDate(state.date);
               },
@@ -297,7 +314,15 @@ export async function renderPlan(container) {
     return el('label', { class: 'field' }, el('span', { text: label }), control);
   }
 
-  await loadDate(state.date);
+  await loadDate(await requestedDate(params, state.date));
+}
+
+async function requestedDate(params, fallback) {
+  const focus = focusTarget(params);
+  if (!focus || focus.kind !== 'day_plan') return fallback;
+  const plans = await api.plans();
+  const plan = plans.find((item) => item.id === focus.id);
+  return plan ? plan.plan_date : fallback;
 }
 
 async function plansModal(container) {

@@ -2,7 +2,8 @@ import { api } from './core/api.js';
 import { el } from './core/dom.js';
 import { ENTITY_LABELS } from './core/format.js';
 import { initPlayer } from './core/player.js';
-import { navigate, registerRoutes, setBadge, startRouter } from './core/router.js';
+import { openEntity } from './core/navigation.js';
+import { registerRoutes, setBadge, startRouter } from './core/router.js';
 import { loadMedia, loadPreferences } from './core/state.js';
 import { applyAppearance } from './core/themes.js';
 import { playReminder } from './core/audio.js';
@@ -68,7 +69,13 @@ async function pollReminders() {
               },
             },
             ...(signal.reminder.target_kind
-              ? [{ label: 'Открыть', run: () => navigate(routeForKind(signal.reminder.target_kind)) }]
+              ? [
+                  {
+                    label: 'Открыть',
+                    run: () =>
+                      openEntity(signal.reminder.target_kind, signal.reminder.target_id),
+                  },
+                ]
               : []),
           ],
         }
@@ -76,27 +83,6 @@ async function pollReminders() {
     }
   } catch (error) {
     void error;
-  }
-}
-
-function routeForKind(kind) {
-  switch (kind) {
-    case 'achievement':
-    case 'achievement_group':
-      return 'achievements';
-    case 'metric':
-      return 'metrics';
-    case 'task':
-      return 'tasks';
-    case 'day_plan':
-      return 'plan';
-    case 'codex_chapter':
-    case 'codex_entry':
-      return 'codex';
-    case 'track':
-      return 'music';
-    default:
-      return 'reminders';
   }
 }
 

@@ -3,6 +3,7 @@ import { el, emptyState, mount } from '../core/dom.js';
 import { formatBytes, formatDateTime } from '../core/format.js';
 import { openLinks } from '../core/links-ui.js';
 import { closeModal, formModal, openModal } from '../core/modal.js';
+import { anchor, focusEntity } from '../core/navigation.js';
 import {
   currentTrack,
   isPlaying,
@@ -17,7 +18,7 @@ import { setHeader } from '../core/router.js';
 import { loadMedia, mediaOfKind, on } from '../core/state.js';
 import { toast } from '../core/toast.js';
 
-export async function renderMusic(container) {
+export async function renderMusic(container, params = {}) {
   container.dispatchEvent(new CustomEvent('view:teardown'));
   await Promise.all([loadMedia(), refreshPlaylist()]);
   const tracks = playlist();
@@ -54,6 +55,7 @@ export async function renderMusic(container) {
   container.addEventListener('view:teardown', off, { once: true });
 
   mount(container, volumeBlock(), list);
+  focusEntity(container, params);
 }
 
 function volumeBlock() {
@@ -106,7 +108,7 @@ function row(track, index, tracks, reload) {
 
   return el(
     'div',
-    { class: `list-item${isCurrent ? ' now' : ''}` },
+    { class: `list-item${isCurrent ? ' now' : ''}`, dataset: anchor('track', track.id) },
     el('button', {
       class: `player-btn${playing ? ' main' : ''}`,
       title: playing ? 'Пауза' : 'Играть',

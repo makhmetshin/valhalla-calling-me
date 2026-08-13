@@ -7,6 +7,7 @@ const DATETIME_FORMAT = new Intl.DateTimeFormat('ru-RU', {
 });
 
 export const CADENCE_LABELS = {
+  once: 'один раз',
   every_15_minutes: 'каждые 15 минут',
   every_hour: 'каждый час',
   every_3_hours: 'каждые 3 часа',

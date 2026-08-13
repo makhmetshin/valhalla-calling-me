@@ -1,13 +1,14 @@
 import { api } from '../core/api.js';
-import { confirmDialog, el, emptyState, iconPlate, mount } from '../core/dom.js';
+import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime, formatNumber } from '../core/format.js';
 import { openLinks } from '../core/links-ui.js';
-import { formModal } from '../core/modal.js';
+import { confirmAction, formModal } from '../core/modal.js';
+import { anchor, entityLink, focusEntity } from '../core/navigation.js';
 import { celebrate, toast } from '../core/toast.js';
 import { loadMedia } from '../core/state.js';
 import { setHeader } from '../core/router.js';
 
-export async function renderAchievements(container) {
+export async function renderAchievements(container, params = {}) {
   await loadMedia();
   const [groups, achievements, metrics] = await Promise.all([
     api.groups(),
@@ -66,7 +67,7 @@ export async function renderAchievements(container) {
     sections.push(
       el(
         'div',
-        { class: 'section-title' },
+        { class: 'section-title', dataset: anchor('achievement_group', group.id) },
         group.icon ? iconPlate(group.icon, 'sm') : null,
         el('span', { text: group.name }),
         el('span', { class: 'muted', text: `${items.filter((i) => i.unlocked).length}/${items.length}` }),
@@ -79,7 +80,12 @@ export async function renderAchievements(container) {
           class: 'btn ghost sm danger',
           text: 'удалить',
           onclick: async () => {
-            if (!confirmDialog(`Убрать группу «${group.name}»? Ачивки останутся.`)) return;
+            const yes = await confirmAction({
+              title: 'Убрать группу',
+              message: `«${group.name}» исчезнет, ачивки из неё останутся без группы.`,
+              confirmLabel: 'Убрать',
+            });
+            if (!yes) return;
             await api.deleteGroup(group.id);
             renderAchievements(container);
           },
@@ -105,6 +111,7 @@ export async function renderAchievements(container) {
   }
 
   mount(container, sections);
+  focusEntity(container, params);
 }
 
 function card(achievement, groups, metrics, container) {
@@ -116,7 +123,10 @@ function card(achievement, groups, metrics, container) {
 
   return el(
     'article',
-    { class: `card ${achievement.unlocked ? 'unlocked' : 'locked'}` },
+    {
+      class: `card ${achievement.unlocked ? 'unlocked' : 'locked'}`,
+      dataset: anchor('achievement', achievement.id),
+    },
     el(
       'div',
       { class: 'card-head' },
@@ -144,7 +154,7 @@ function card(achievement, groups, metrics, container) {
           el(
             'div',
             { class: 'row between', style: { marginBottom: '6px' } },
-            el('span', { class: 'muted', text: metric.name }),
+            entityLink('metric', metric.id, metric.name),
             el('span', {
               class: 'muted',
               text: `${formatNumber(metric.value)} / ${formatNumber(target)} ${metric.unit}`,
@@ -188,8 +198,13 @@ function card(achievement, groups, metrics, container) {
       el('button', {
         class: 'btn sm ghost danger',
         text: '✕',
+        title: 'стереть ачивку',
         onclick: async () => {
-          if (!confirmDialog(`Стереть «${achievement.title}»?`)) return;
+          const yes = await confirmAction({
+            title: 'Стереть ачивку',
+            message: `«${achievement.title}» исчезнет вместе со своими связями.`,
+          });
+          if (!yes) return;
           await api.deleteAchievement(achievement.id);
           reload();
         },

@@ -40,6 +40,7 @@ class MetricDirection(StrEnum):
 
 
 class ReminderCadence(StrEnum):
+    ONCE = "once"
     EVERY_15_MINUTES = "every_15_minutes"
     EVERY_HOUR = "every_hour"
     EVERY_3_HOURS = "every_3_hours"

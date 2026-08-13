@@ -1,13 +1,14 @@
 import { api } from '../core/api.js';
-import { confirmDialog, el, emptyState, iconPlate, mount } from '../core/dom.js';
+import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime, formatNumber } from '../core/format.js';
 import { openLinks } from '../core/links-ui.js';
-import { formModal, openModal, closeModal } from '../core/modal.js';
+import { closeModal, confirmAction, formModal, openModal } from '../core/modal.js';
+import { anchor, focusEntity } from '../core/navigation.js';
 import { setHeader } from '../core/router.js';
 import { loadMedia } from '../core/state.js';
 import { celebrateAll, toast } from '../core/toast.js';
 
-export async function renderMetrics(container) {
+export async function renderMetrics(container, params = {}) {
   await loadMedia();
   const metrics = await api.metrics();
 
@@ -40,6 +41,7 @@ export async function renderMetrics(container) {
     container,
     el('div', { class: 'grid cards' }, metrics.map((metric) => card(metric, container)))
   );
+  focusEntity(container, params);
 }
 
 function card(metric, container) {
@@ -54,7 +56,7 @@ function card(metric, container) {
 
   return el(
     'article',
-    { class: 'card' },
+    { class: 'card', dataset: anchor('metric', metric.id) },
     el(
       'div',
       { class: 'card-head' },
@@ -104,8 +106,13 @@ function card(metric, container) {
       el('button', {
         class: 'btn sm ghost danger',
         text: '✕',
+        title: 'стереть метрику',
         onclick: async () => {
-          if (!confirmDialog(`Стереть метрику «${metric.name}»?`)) return;
+          const yes = await confirmAction({
+            title: 'Стереть метрику',
+            message: `«${metric.name}» исчезнет вместе со своей хроникой.`,
+          });
+          if (!yes) return;
           await api.deleteMetric(metric.id);
           reload();
         },

@@ -54,12 +54,25 @@ export function setHeader(title, subtitle, actions = []) {
 export async function navigate(name, params = {}) {
   const route = routes.find((item) => item.name === name) || routes[0];
   if (!route) return;
-  const hash = `#/${route.name}`;
+  const hash = buildHash(route.name, params);
   if (window.location.hash !== hash) {
     window.location.hash = hash;
     return;
   }
   await render(route, params);
+}
+
+function buildHash(name, params) {
+  const pairs = Object.entries(params).filter(
+    ([, value]) => value !== null && value !== undefined && value !== ''
+  );
+  const query = new URLSearchParams(pairs).toString();
+  return `#/${name}${query ? `?${query}` : ''}`;
+}
+
+function parseHash(fallback) {
+  const [name, query] = window.location.hash.replace(/^#\/?/, '').split('?');
+  return { name: name || fallback, params: Object.fromEntries(new URLSearchParams(query || '')) };
 }
 
 async function render(route, params) {
@@ -87,9 +100,9 @@ export function refresh() {
 
 export function startRouter(fallback) {
   const resolve = () => {
-    const name = window.location.hash.replace('#/', '') || fallback;
+    const { name, params } = parseHash(fallback);
     const route = routes.find((item) => item.name === name) || routes[0];
-    render(route, {});
+    render(route, params);
   };
   window.addEventListener('hashchange', resolve);
   resolve();
