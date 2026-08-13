@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
-import { CADENCE_LABELS, formatDateTime, toIsoLocal } from '../core/format.js';
+import { CADENCE_KEYS, cadenceLabel, formatDateTime, toIsoLocal } from '../core/format.js';
+import { t } from '../core/i18n.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { anchor, entityLink, focusEntity } from '../core/navigation.js';
 import { setHeader } from '../core/router.js';
@@ -11,10 +12,10 @@ export async function renderReminders(container, params = {}) {
   await loadMedia();
   const [reminders, catalog] = await Promise.all([api.reminders(), api.linkCatalog()]);
 
-  setHeader('Напоминания', 'Голос, который зовёт, когда ты забыл', [
+  setHeader(t('nav.reminders'), t('rem.subtitle'), [
     el('button', {
       class: 'btn primary',
-      text: 'Новое напоминание',
+      text: t('rem.newOne'),
       onclick: () => reminderForm(null, catalog, () => renderReminders(container)),
     }),
   ]);
@@ -23,12 +24,12 @@ export async function renderReminders(container, params = {}) {
     mount(
       container,
       emptyState(
-        'Тишина',
-        'Напоминание может звать к таске, к метрике, к ачивке или к главе кодекса.',
+        t('rem.emptyTitle'),
+        t('rem.emptyHint'),
         el('button', {
           class: 'btn primary',
           style: { marginTop: '14px' },
-          text: 'Создать напоминание',
+          text: t('rem.create'),
           onclick: () => reminderForm(null, catalog, () => renderReminders(container)),
         })
       )
@@ -62,11 +63,11 @@ function card(reminder, catalog, container) {
         'div',
         { style: { flex: '1', minWidth: '0' } },
         el('div', { class: 'card-title', text: reminder.title }),
-        el('div', { class: 'muted', text: CADENCE_LABELS[reminder.cadence] })
+        el('div', { class: 'muted', text: cadenceLabel(reminder.cadence) })
       ),
       el('span', {
         class: `tag${reminder.is_active ? ' on' : ''}`,
-        text: reminder.is_active ? 'зовёт' : 'молчит',
+        text: reminder.is_active ? t('rem.calling') : t('rem.silent'),
       })
     ),
     reminder.message ? el('div', { class: 'card-body', text: reminder.message }) : null,
@@ -83,13 +84,15 @@ function card(reminder, catalog, container) {
       el('span', {
         class: 'muted',
         text: reminder.is_active
-          ? `${once ? 'зов' : 'следующий зов'} ${formatDateTime(reminder.next_fire_at)}`
-          : `звал ${formatDateTime(reminder.last_fired_at)}`,
+          ? t(once ? 'rem.singleCall' : 'rem.nextCall', {
+              when: formatDateTime(reminder.next_fire_at),
+            })
+          : t('rem.lastCall', { when: formatDateTime(reminder.last_fired_at) }),
       }),
       el('span', { style: { flex: '1' } }),
       el('button', {
         class: 'btn sm ghost',
-        text: reminder.is_active ? 'Заглушить' : 'Разбудить',
+        text: reminder.is_active ? t('rem.mute') : t('rem.wake'),
         onclick: async () => {
           await api.updateReminder(reminder.id, { is_active: !reminder.is_active });
           reload();
@@ -97,20 +100,20 @@ function card(reminder, catalog, container) {
       }),
       el('button', {
         class: 'btn sm ghost',
-        text: 'Править',
+        text: t('common.edit'),
         onclick: () => reminderForm(reminder, catalog, reload),
       }),
       el('button', {
         class: 'btn sm ghost danger',
-        text: 'Стереть',
+        text: t('common.delete'),
         onclick: async () => {
           const yes = await confirmAction({
-            title: 'Стереть напоминание',
-            message: `«${reminder.title}» больше не позовёт.`,
+            title: t('rem.deleteTitle'),
+            message: t('rem.deleteText', { name: reminder.title }),
           });
           if (!yes) return;
           await api.deleteReminder(reminder.id);
-          toast('Зов умолк', reminder.title);
+          toast(t('rem.deletedToast'), reminder.title);
           reload();
         },
       })
@@ -120,40 +123,40 @@ function card(reminder, catalog, container) {
 
 export function reminderForm(reminder, catalog, onDone) {
   formModal({
-    title: reminder ? 'Правка напоминания' : 'Новое напоминание',
+    title: reminder ? t('rem.formEdit') : t('rem.newOne'),
     fields: [
-      { name: 'title', label: 'Заголовок', value: reminder?.title || '' },
-      { name: 'message', label: 'Текст', type: 'textarea', rows: 3, value: reminder?.message || '' },
+      { name: 'title', label: t('rem.heading'), value: reminder?.title || '' },
+      { name: 'message', label: t('rem.text'), type: 'textarea', rows: 3, value: reminder?.message || '' },
       {
         name: 'cadence',
-        label: 'Как часто',
+        label: t('rem.cadence'),
         type: 'select',
         value: reminder?.cadence || 'daily',
-        options: Object.entries(CADENCE_LABELS).map(([value, label]) => ({ value, label })),
+        options: CADENCE_KEYS.map((value) => ({ value, label: cadenceLabel(value) })),
       },
       {
         name: 'anchor_at',
-        label: 'Точка отсчёта',
+        label: t('rem.anchor'),
         type: 'datetime-local',
         value: reminder ? toIsoLocal(new Date(reminder.anchor_at)) : toIsoLocal(new Date()),
-        help: 'для разового — время самого зова, для остальных — от неё считаются все следующие',
+        help: t('rem.anchorHelp'),
       },
       {
         name: 'target',
-        label: 'Ссылается на',
+        label: t('rem.target'),
         type: 'entity',
         catalog,
         value: reminder?.target_kind
           ? { kind: reminder.target_kind, id: reminder.target_id }
           : null,
-        help: 'сначала выбери вид, потом сам объект',
+        help: t('rem.targetHelp'),
       },
-      { name: 'sound_id', label: 'Звук', type: 'media', kind: 'audio', value: reminder?.sound_id ?? null },
-      { name: 'icon_id', label: 'Иконка', type: 'media', kind: 'image', value: reminder?.icon_id ?? null },
-      { name: 'is_active', label: 'Активно', type: 'checkbox', value: reminder ? reminder.is_active : true },
+      { name: 'sound_id', label: t('common.sound'), type: 'media', kind: 'audio', value: reminder?.sound_id ?? null },
+      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: reminder?.icon_id ?? null },
+      { name: 'is_active', label: t('rem.active'), type: 'checkbox', value: reminder ? reminder.is_active : true },
     ],
     onSubmit: async (values) => {
-      if (!values.title.trim()) throw new Error('Заголовок обязателен');
+      if (!values.title.trim()) throw new Error(t('rem.headingRequired'));
       const payload = {
         title: values.title,
         message: values.message,
@@ -167,7 +170,7 @@ export function reminderForm(reminder, catalog, onDone) {
       };
       if (reminder) await api.updateReminder(reminder.id, payload);
       else await api.createReminder(payload);
-      toast('Зов назначен', payload.title);
+      toast(t('rem.savedToast'), payload.title);
       await onDone();
     },
   });

@@ -1,6 +1,7 @@
 import { api } from './core/api.js';
 import { el } from './core/dom.js';
-import { ENTITY_LABELS } from './core/format.js';
+import { entityLabel } from './core/format.js';
+import { language, t } from './core/i18n.js';
 import { initPlayer } from './core/player.js';
 import { openEntity } from './core/navigation.js';
 import { registerRoutes, setBadge, startRouter } from './core/router.js';
@@ -18,16 +19,16 @@ import { renderReminders } from './views/reminders.js';
 import { renderSettings } from './views/settings.js';
 import { renderTasks } from './views/tasks.js';
 
-const ROUTES = [
-  { name: 'dashboard', title: 'Чертог', icon: 'yggdrasil', render: renderDashboard },
-  { name: 'achievements', title: 'Ачивки', icon: 'valknut', render: renderAchievements },
-  { name: 'metrics', title: 'Метрики', icon: 'rune-stone', render: renderMetrics },
-  { name: 'tasks', title: 'Чек-лист', icon: 'axe', render: renderTasks },
-  { name: 'plan', title: 'План дня', icon: 'longship', render: renderPlan },
-  { name: 'reminders', title: 'Зовы', icon: 'raven', render: renderReminders },
-  { name: 'codex', title: 'Кодекс', icon: 'wolf', render: renderCodex },
-  { name: 'music', title: 'Музыка', icon: 'dawn-horn', render: renderMusic },
-  { name: 'settings', title: 'Настройки', icon: 'vegvisir', render: renderSettings },
+const ROUTES = () => [
+  { name: 'dashboard', title: t('nav.dashboard'), icon: 'yggdrasil', render: renderDashboard },
+  { name: 'achievements', title: t('nav.achievements'), icon: 'valknut', render: renderAchievements },
+  { name: 'metrics', title: t('nav.metrics'), icon: 'rune-stone', render: renderMetrics },
+  { name: 'tasks', title: t('nav.tasks'), icon: 'axe', render: renderTasks },
+  { name: 'plan', title: t('nav.plan'), icon: 'longship', render: renderPlan },
+  { name: 'reminders', title: t('nav.reminders'), icon: 'raven', render: renderReminders },
+  { name: 'codex', title: t('nav.codex'), icon: 'wolf', render: renderCodex },
+  { name: 'music', title: t('nav.music'), icon: 'dawn-horn', render: renderMusic },
+  { name: 'settings', title: t('nav.settings'), icon: 'vegvisir', render: renderSettings },
 ];
 
 const REMINDER_INTERVAL = 30000;
@@ -45,7 +46,7 @@ async function pollReminders() {
       playReminder(signal.reminder);
       toast(
         signal.reminder.title,
-        [signal.reminder.message, signal.target_label ? `→ ${ENTITY_LABELS[signal.reminder.target_kind]}: ${signal.target_label}` : '']
+        [signal.reminder.message, signal.target_label ? `→ ${entityLabel(signal.reminder.target_kind)}: ${signal.target_label}` : '']
           .filter(Boolean)
           .join('\n'),
         {
@@ -53,7 +54,7 @@ async function pollReminders() {
           icon: signal.reminder.icon,
           actions: [
             {
-              label: 'Принято',
+              label: t('rem.accept'),
               run: async () => {
                 await api.acknowledgeReminder(signal.reminder.id);
                 shown.delete(key);
@@ -61,7 +62,7 @@ async function pollReminders() {
               },
             },
             {
-              label: 'Позже',
+              label: t('rem.snooze'),
               run: async () => {
                 await api.snoozeReminder(signal.reminder.id, 15);
                 shown.delete(key);
@@ -71,7 +72,7 @@ async function pollReminders() {
             ...(signal.reminder.target_kind
               ? [
                   {
-                    label: 'Открыть',
+                    label: t('common.open'),
                     run: () =>
                       openEntity(signal.reminder.target_kind, signal.reminder.target_id),
                   },
@@ -101,7 +102,9 @@ async function refreshProgress() {
 async function boot() {
   await Promise.all([loadPreferences(), loadMedia()]);
   applyAppearance();
-  registerRoutes(ROUTES);
+  document.documentElement.lang = language();
+  document.getElementById('railMotto').textContent = t('nav.motto');
+  registerRoutes(ROUTES());
   startRouter('dashboard');
   initPlayer();
   refreshProgress();

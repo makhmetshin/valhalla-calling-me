@@ -1,23 +1,28 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from valhalla.db.base import now
-from valhalla.models import MediaAsset, MediaKind, Track
+from valhalla.media_paths import PLAYLIST_COLLECTION
+from valhalla.models import MediaAsset, MediaKind, MediaOrigin, Track
 from valhalla.schemas.music import TrackCreate, TrackUpdate
 from valhalla.services import media as media_service
 from valhalla.services.errors import ConflictError, ValidationError
 from valhalla.services.repository import apply_patch, next_position, require
 
+ORDER_PREFIX = re.compile(r"^\d{1,3}[\s._-]+")
+
 
 def _split_name(source: str) -> tuple[str, str]:
-    if " - " in source:
-        artist, _, title = source.partition(" - ")
+    cleaned = ORDER_PREFIX.sub("", source.strip())
+    if " - " in cleaned:
+        artist, _, title = cleaned.partition(" - ")
         return title.strip(), artist.strip()
-    return source.strip(), ""
+    return cleaned, ""
 
 
 def _track_for_asset(session: Session, asset_id: int) -> Track | None:
@@ -79,3 +84,26 @@ def mark_played(session: Session, track_id: int) -> Track:
     track.last_played_at = now()
     session.flush()
     return track
+
+
+def sync_playlist(session: Session) -> int:
+    statement = (
+        select(MediaAsset)
+        .where(
+            MediaAsset.kind == MediaKind.AUDIO,
+            MediaAsset.origin == MediaOrigin.UPLOAD,
+            MediaAsset.relative_path.startswith(f"{PLAYLIST_COLLECTION}/"),
+        )
+        .order_by(MediaAsset.relative_path)
+    )
+
+    added = 0
+    for asset in session.execute(statement).scalars():
+        if _track_for_asset(session, asset.id) is not None:
+            continue
+        create_track(
+            session,
+            TrackCreate(asset_id=asset.id, title=Path(asset.relative_path).stem),
+        )
+        added += 1
+    return added

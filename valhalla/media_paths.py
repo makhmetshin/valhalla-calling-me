@@ -17,12 +17,11 @@ PRESET_MOUNT = "/presets"
 
 UPLOAD_COLLECTION = "uploads"
 GLYPH_COLLECTION = "glyphs"
+PLAYLIST_COLLECTION = "playlist"
 
 
-def collection_of(origin: MediaOrigin, relative_path: str) -> str:
-    if origin == MediaOrigin.UPLOAD:
-        return UPLOAD_COLLECTION
-    head, separator, _ = relative_path.replace("\\", "/").lstrip("/").partition("/")
+def collection_of(_: MediaOrigin, relative_path: str) -> str:
+    head, separator, _tail = relative_path.replace("\\", "/").lstrip("/").partition("/")
     return head if separator else UPLOAD_COLLECTION
 
 

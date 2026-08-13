@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from valhalla.models import Preference
 
 DEFAULTS: dict[str, Any] = {
+    "ui.language": "ru",
     "theme.palette": "",
     "theme.accent": "",
     "theme.font_heading": "",
