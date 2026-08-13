@@ -2,10 +2,6 @@ import { mediaById, state } from './state.js';
 
 const cache = new Map();
 
-export const FALLBACK_UNLOCK = '/presets/audio/victory-horns.wav';
-export const FALLBACK_REMINDER = '/presets/audio/rune-chime.wav';
-export const FALLBACK_TASK = '/presets/audio/ice-crack.wav';
-
 function volume() {
   const value = Number(state.preferences['audio.master_volume']);
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.7;
@@ -30,12 +26,12 @@ export function playAsset(mediaId, fallback) {
 
 export function playUnlock(achievement) {
   const preferred = achievement && achievement.sound ? achievement.sound.url : null;
-  playUrl(preferred || assetUrl('audio.unlock_sound_id') || FALLBACK_UNLOCK);
+  playUrl(preferred || assetUrl('audio.unlock_sound_id'));
 }
 
 export function playReminder(reminder) {
   const preferred = reminder && reminder.sound ? reminder.sound.url : null;
-  playUrl(preferred || assetUrl('audio.reminder_sound_id') || FALLBACK_REMINDER);
+  playUrl(preferred || assetUrl('audio.reminder_sound_id'));
 }
 
 function assetUrl(preferenceKey) {

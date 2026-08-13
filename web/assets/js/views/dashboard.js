@@ -1,6 +1,7 @@
 import { api } from '../core/api.js';
 import { el, iconPlate, mount } from '../core/dom.js';
 import { formatDate, formatDateTime, formatNumber, minutesToHuman } from '../core/format.js';
+import { entityLink, openEntity } from '../core/navigation.js';
 import { navigate, setHeader } from '../core/router.js';
 import { loadMedia } from '../core/state.js';
 import { celebrateAll } from '../core/toast.js';
@@ -75,7 +76,16 @@ export async function renderDashboard(container) {
                   renderDashboard(container);
                 },
               }),
-              el('div', { class: 'title' }, el('div', { text: task.title }), task.notes ? el('small', { text: task.notes }) : null)
+              el(
+                'button',
+                {
+                  class: 'title link-row',
+                  title: 'Открыть в чек-листе',
+                  onclick: () => openEntity('task', task.id),
+                },
+                el('div', { text: task.title }),
+                task.notes ? el('small', { text: task.notes }) : null
+              )
             )
           )
         )
@@ -91,7 +101,11 @@ export async function renderDashboard(container) {
         overview.recent_unlocks.map((achievement) =>
           el(
             'article',
-            { class: 'card unlocked' },
+            {
+              class: 'card unlocked',
+              style: { cursor: 'pointer' },
+              onclick: () => openEntity('achievement', achievement.id),
+            },
             el(
               'div',
               { class: 'card-head' },
@@ -128,7 +142,15 @@ function metricTile(metric, container) {
       el(
         'div',
         { style: { flex: '1', minWidth: '0' } },
-        el('div', { class: 'card-title', text: metric.name }),
+        el(
+          'button',
+          {
+            class: 'card-title link-row',
+            title: 'Открыть метрику',
+            onclick: () => openEntity('metric', metric.id),
+          },
+          metric.name
+        ),
         el('div', { class: 'muted', text: `${formatNumber(metric.value)} ${metric.unit}` })
       ),
       el('button', {
@@ -168,7 +190,11 @@ function planBlock(plan) {
           'div',
           { class: `slot${nowMinutes >= from && nowMinutes < to ? ' now' : ''}` },
           el('time', { text: `${slot.starts_at.slice(0, 5)} — ${slot.ends_at.slice(0, 5)}` }),
-          el('div', { class: 'title', style: { flex: '1' } }, el('div', { text: slot.label })),
+          el(
+            'div',
+            { class: 'title', style: { flex: '1' } },
+            slot.task_id ? entityLink('task', slot.task_id, slot.label) : el('div', { text: slot.label })
+          ),
           el('span', { class: 'units', text: `${slot.units} ед.` })
         );
       })

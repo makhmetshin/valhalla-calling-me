@@ -1,8 +1,8 @@
 import { api } from '../core/api.js';
 import { applyBackground } from '../core/backgrounds.js';
-import { confirmDialog, el, mount } from '../core/dom.js';
+import { el, mount } from '../core/dom.js';
 import { formatBytes } from '../core/format.js';
-import { formModal } from '../core/modal.js';
+import { confirmAction, formModal } from '../core/modal.js';
 import { currentRoute, setHeader } from '../core/router.js';
 import { loadMedia, loadPreferences, mediaOfKind, savePreferences, state } from '../core/state.js';
 import {
@@ -97,6 +97,15 @@ function field(label, control, hint) {
 }
 
 function soundBlock(container) {
+  const preview = (key) => {
+    const asset = mediaOfKind('audio').find((item) => item.id === state.preferences[key]);
+    if (!asset) {
+      toast('Звук не выбран', 'Положи свои файлы в vault/audio и выбери их здесь', { tone: 'warn' });
+      return;
+    }
+    playUrl(asset.url);
+  };
+
   const volume = el('input', {
     type: 'range',
     min: 0,
@@ -107,14 +116,14 @@ function soundBlock(container) {
   });
   volume.onchange = async () => {
     await savePreferences({ 'audio.master_volume': Number(volume.value) });
-    playUrl('/presets/audio/rune-chime.wav');
+    preview('audio.unlock_sound_id');
   };
 
   const soundSelect = (key, label) => {
     const select = el(
       'select',
       {},
-      [el('option', { value: '', text: '— звук по умолчанию —' })].concat(
+      [el('option', { value: '', text: '— без звука —' })].concat(
         mediaOfKind('audio').map((asset) =>
           el('option', {
             value: String(asset.id),
@@ -136,15 +145,9 @@ function soundBlock(container) {
         'div',
         { class: 'audio-row' },
         select,
-        el('button', {
-          class: 'btn sm',
-          text: '▶',
-          onclick: () => {
-            const asset = mediaOfKind('audio').find((item) => item.id === state.preferences[key]);
-            playUrl(asset ? asset.url : '/presets/audio/victory-horns.wav');
-          },
-        })
-      )
+        el('button', { class: 'btn sm', text: '▶', onclick: () => preview(key) })
+      ),
+      'свои звуки клади в vault/audio — коробочных больше нет'
     );
   };
 
@@ -288,7 +291,12 @@ function resetBlock() {
       class: 'btn danger',
       text: 'Сбросить всё',
       onclick: async () => {
-        if (!confirmDialog('Вернуть все настройки к значениям по умолчанию?')) return;
+        const yes = await confirmAction({
+          title: 'Сбросить настройки',
+          message: 'Тема, цвет, шрифты, фоны, громкость и звуки вернутся к исходным.',
+          confirmLabel: 'Сбросить',
+        });
+        if (!yes) return;
         await api.resetPreferences();
         window.location.reload();
       },
@@ -423,7 +431,12 @@ function vaultBlock(vault, backups, container) {
                 class: 'btn sm',
                 text: 'Восстановить',
                 onclick: async () => {
-                  if (!confirmDialog('Развернуть архив поверх текущих данных? Перезапусти приложение после.')) return;
+                  const yes = await confirmAction({
+                    title: 'Развернуть архив',
+                    message: 'Данные из архива лягут поверх текущих. После этого перезапусти приложение.',
+                    confirmLabel: 'Развернуть',
+                  });
+                  if (!yes) return;
                   await api.restoreBackup(backup.name);
                   toast('Развёрнуто', 'Перезапусти приложение');
                 },
@@ -432,7 +445,11 @@ function vaultBlock(vault, backups, container) {
                 class: 'btn sm ghost danger',
                 text: '✕',
                 onclick: async () => {
-                  if (!confirmDialog(`Удалить архив ${backup.name}?`)) return;
+                  const yes = await confirmAction({
+                    title: 'Удалить архив',
+                    message: `${backup.name} исчезнет из vault/backups.`,
+                  });
+                  if (!yes) return;
                   await api.deleteBackup(backup.name);
                   renderSettings(container);
                 },
@@ -482,7 +499,11 @@ function mediaBlock(container) {
                 class: 'btn sm ghost danger',
                 text: '✕',
                 onclick: async () => {
-                  if (!confirmDialog(`Удалить файл «${asset.title}»?`)) return;
+                  const yes = await confirmAction({
+                    title: 'Удалить файл',
+                    message: `«${asset.title}» будет стёрт с диска.`,
+                  });
+                  if (!yes) return;
                   try {
                     await api.deleteMedia(asset.id);
                     await loadMedia(true);

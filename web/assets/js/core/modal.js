@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import { clear, el, mount } from './dom.js';
+import { ENTITY_LABELS } from './format.js';
 import { loadMedia, mediaById, mediaOfKind } from './state.js';
 import { playUrl } from './audio.js';
 import { toast } from './toast.js';
@@ -11,7 +12,7 @@ export function closeModal() {
   clear(root);
 }
 
-export function openModal({ title, subtitle, content, actions, width }) {
+export function openModal({ title, subtitle, content, actions, width, onDismiss }) {
   const body = el('div', { class: 'modal-body' });
   const modal = el(
     'div',
@@ -30,9 +31,47 @@ export function openModal({ title, subtitle, content, actions, width }) {
   mount(root, modal);
   root.classList.add('open');
   root.onclick = (event) => {
-    if (event.target === root) closeModal();
+    if (event.target !== root) return;
+    closeModal();
+    if (onDismiss) onDismiss();
   };
   return { modal, body };
+}
+
+export function confirmAction({ title, message, confirmLabel = 'Стереть', hint }) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+
+    openModal({
+      title,
+      subtitle: hint,
+      content: [el('p', { text: message })],
+      onDismiss: () => finish(false),
+      actions: [
+        el('button', {
+          class: 'btn ghost',
+          text: 'Отмена',
+          onclick: () => {
+            closeModal();
+            finish(false);
+          },
+        }),
+        el('button', {
+          class: 'btn danger',
+          text: confirmLabel,
+          onclick: () => {
+            closeModal();
+            finish(true);
+          },
+        }),
+      ],
+    });
+  });
 }
 
 export function formModal({ title, subtitle, fields, submitLabel = 'Сохранить', onSubmit }) {
@@ -138,6 +177,10 @@ function buildControl(field) {
       const picker = mediaPicker(field);
       return { node: labelled(field, picker.node), read: picker.read };
     }
+    case 'entity': {
+      const picker = entityPicker(field);
+      return { node: labelled(field, picker.node), read: picker.read };
+    }
     case 'date':
     case 'time':
     case 'datetime-local': {
@@ -153,6 +196,58 @@ function buildControl(field) {
       return { node: labelled(field, input), read: () => input.value };
     }
   }
+}
+
+function entityPicker(field) {
+  const catalog = field.catalog || {};
+  const kinds = Object.keys(ENTITY_LABELS).filter((kind) => (catalog[kind] || []).length);
+  const current = field.value || {};
+
+  const kindSelect = el(
+    'select',
+    {},
+    [el('option', { value: '', text: '— ни к чему —' })].concat(
+      kinds.map((kind) =>
+        el('option', { value: kind, text: ENTITY_LABELS[kind], selected: kind === current.kind })
+      )
+    )
+  );
+  const itemSelect = el('select', {});
+
+  function fillItems(preferredId) {
+    const items = catalog[kindSelect.value] || [];
+    itemSelect.disabled = !items.length;
+    mount(
+      itemSelect,
+      items.length
+        ? items.map((item) =>
+            el('option', {
+              value: String(item.id),
+              text: item.detail ? `${item.label} — ${item.detail}` : item.label,
+              selected: item.id === preferredId,
+            })
+          )
+        : [el('option', { value: '', text: 'нечего выбрать' })]
+    );
+  }
+
+  kindSelect.onchange = () => fillItems(null);
+  fillItems(current.id ?? null);
+
+  const node = el(
+    'div',
+    { class: 'row wrap', style: { gap: '8px' } },
+    el('div', { style: { flex: '1 1 150px' } }, kindSelect),
+    el('div', { style: { flex: '2 1 220px' } }, itemSelect)
+  );
+
+  return {
+    node,
+    read: () => {
+      if (!kindSelect.value || !itemSelect.value) return null;
+      return { kind: kindSelect.value, id: Number(itemSelect.value) };
+    },
+  };
 }
 
 function mediaPicker(field) {

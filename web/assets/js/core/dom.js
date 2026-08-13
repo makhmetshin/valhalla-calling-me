@@ -49,7 +49,3 @@ export function iconPlate(media, size = '') {
 export function emptyState(title, hint, action) {
   return el('div', { class: 'empty' }, el('h3', { text: title }), el('p', { text: hint }), action);
 }
-
-export function confirmDialog(message) {
-  return window.confirm(message);
-}

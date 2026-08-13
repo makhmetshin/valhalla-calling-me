@@ -19,6 +19,8 @@ from valhalla.services.repository import require
 
 
 def compute_next_fire(anchor: datetime, cadence: ReminderCadence, reference: datetime) -> datetime:
+    if cadence == ReminderCadence.ONCE:
+        return anchor
     interval = timedelta(seconds=CADENCE_SECONDS[cadence])
     if reference < anchor:
         return anchor
@@ -92,7 +94,10 @@ def acknowledge(session: Session, reminder_id: int) -> Reminder:
     moment = now()
     reminder.last_fired_at = moment
     reminder.fire_count += 1
-    reminder.next_fire_at = compute_next_fire(reminder.anchor_at, reminder.cadence, moment)
+    if reminder.cadence == ReminderCadence.ONCE:
+        reminder.is_active = False
+    else:
+        reminder.next_fire_at = compute_next_fire(reminder.anchor_at, reminder.cadence, moment)
     session.flush()
     return reminder
 

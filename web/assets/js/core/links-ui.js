@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { el, mount } from './dom.js';
 import { ENTITY_LABELS } from './format.js';
 import { closeModal, openModal } from './modal.js';
+import { openEntity } from './navigation.js';
 import { toast } from './toast.js';
 
 export async function openLinks(kind, id, label) {
@@ -48,8 +49,16 @@ export async function openLinks(kind, id, label) {
               'div',
               { class: 'list-item' },
               el(
-                'div',
-                { class: 'title' },
+                'button',
+                {
+                  class: 'title link-row',
+                  title: 'Перейти к нему',
+                  disabled: !other,
+                  onclick: () => {
+                    closeModal();
+                    openEntity(otherKind, other.id);
+                  },
+                },
                 el('div', { text: other ? other.label : 'потеряно' }),
                 el('small', { text: `${ENTITY_LABELS[otherKind]}${link.note ? ` · ${link.note}` : ''}` })
               ),
