@@ -71,7 +71,13 @@ def list_assets(session: Session, kind: MediaKind | None = None) -> list[MediaAs
     return list(session.execute(statement).scalars())
 
 
-def store_upload(session: Session, filename: str, payload: bytes, title: str = "") -> MediaAsset:
+def store_upload(
+    session: Session,
+    filename: str,
+    payload: bytes,
+    title: str = "",
+    subdirectory: str = "",
+) -> MediaAsset:
     settings = get_settings()
     if not payload:
         raise ValidationError("Empty file")
@@ -81,19 +87,23 @@ def store_upload(session: Session, filename: str, payload: bytes, title: str = "
     mime_type = guess_mime_type(filename)
     kind = kind_for_mime(mime_type)
     checksum = hashlib.sha256(payload).hexdigest()
+    folder = subdirectory.strip("/")
 
     existing = session.execute(
         select(MediaAsset).where(
             MediaAsset.checksum == checksum,
             MediaAsset.kind == kind,
             MediaAsset.origin == MediaOrigin.UPLOAD,
+            MediaAsset.relative_path.startswith(f"{folder}/" if folder else ""),
         )
-    ).scalar_one_or_none()
-    if existing is not None:
-        return existing
+    ).scalars()
+    for asset in existing:
+        if Path(asset.relative_path).parent.as_posix().strip(".") == folder:
+            return asset
 
     suffix = Path(filename).suffix.lower() or Path(filename).suffix
-    relative_path = f"{slugify(filename)}-{checksum[:10]}{suffix}"
+    name = f"{slugify(filename)}-{checksum[:10]}{suffix}"
+    relative_path = f"{folder}/{name}" if folder else name
     target = settings.vault_dir / KIND_DIRECTORIES[kind] / relative_path
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(payload)

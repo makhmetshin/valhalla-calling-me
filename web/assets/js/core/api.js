@@ -106,11 +106,20 @@ export const api = {
   updateEntry: (id, payload) => patch(`/codex/entries/${id}`, payload),
   deleteEntry: (id) => remove(`/codex/entries/${id}`),
 
-  tracks: () => get('/music/tracks'),
+  playlists: () => get('/music/playlists'),
+  createPlaylist: (payload) => post('/music/playlists', payload),
+  updatePlaylist: (id, payload) => patch(`/music/playlists/${id}`, payload),
+  deletePlaylist: (id, withFiles = false) =>
+    remove(`/music/playlists/${id}?with_files=${withFiles}`),
+  reorderPlaylists: (ids) => post('/music/playlists/order', { ids }),
+
+  tracks: (playlistId) =>
+    get(`/music/tracks${playlistId ? `?playlist_id=${playlistId}` : ''}`),
   createTrack: (payload) => post('/music/tracks', payload),
-  uploadTrack: (file, title = '') => {
+  uploadTrack: (playlistId, file, title = '') => {
     const form = new FormData();
     form.append('file', file);
+    form.append('playlist_id', String(playlistId));
     form.append('title', title);
     return request('POST', '/music/tracks/upload', form);
   },

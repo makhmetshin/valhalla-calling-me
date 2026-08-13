@@ -11,6 +11,8 @@ sound.preload = 'auto';
 
 const player = {
   tracks: [],
+  playlists: [],
+  playlistId: null,
   index: -1,
   collapsed: false,
 };
@@ -19,6 +21,18 @@ let progressBar = null;
 
 export function playlist() {
   return player.tracks;
+}
+
+export function playlists() {
+  return player.playlists;
+}
+
+export function activePlaylistId() {
+  return player.playlistId;
+}
+
+export function activePlaylist() {
+  return player.playlists.find((item) => item.id === player.playlistId) || null;
 }
 
 export function currentTrack() {
@@ -30,6 +44,7 @@ export function playerSnapshot() {
     track: currentTrack(),
     index: player.index,
     count: player.tracks.length,
+    playlistId: player.playlistId,
     playing: isPlaying(),
   };
 }
@@ -78,9 +93,26 @@ export function stop() {
   announce();
 }
 
+export async function selectPlaylist(playlistId) {
+  if (player.playlistId === playlistId) return player.tracks;
+  player.playlistId = playlistId;
+  unload();
+  player.index = -1;
+  await savePreferences({ 'player.playlist_id': playlistId }).catch(() => {});
+  return refreshPlaylist();
+}
+
 export async function refreshPlaylist() {
   const active = currentTrack();
-  player.tracks = await api.tracks();
+  [player.playlists, player.tracks] = await Promise.all([
+    api.playlists(),
+    api.tracks(player.playlistId),
+  ]);
+
+  if (player.playlistId !== null && !player.playlists.some((item) => item.id === player.playlistId)) {
+    player.playlistId = null;
+    player.tracks = await api.tracks();
+  }
 
   if (!player.tracks.length) {
     unload();
@@ -102,6 +134,7 @@ export async function refreshPlaylist() {
 
 export async function initPlayer() {
   player.collapsed = Boolean(state.preferences['player.collapsed']);
+  player.playlistId = state.preferences['player.playlist_id'] ?? null;
   sound.volume = musicVolume();
   await refreshPlaylist();
 
@@ -189,7 +222,7 @@ function render() {
         onclick: () => navigate('music'),
       },
       el('strong', { text: track ? track.title : t('music.nothingChosen') }),
-      el('span', { text: track && track.artist ? track.artist : t('common.nameless') })
+      el('span', { text: secondLine(track) })
     ),
     el('button', {
       class: 'player-fold',
@@ -202,6 +235,12 @@ function render() {
   dock.classList.add('live');
   dock.classList.toggle('collapsed', player.collapsed);
   updateProgress();
+}
+
+function secondLine(track) {
+  const album = activePlaylist();
+  const parts = [track && track.artist ? track.artist : null, album ? album.name : null];
+  return parts.filter(Boolean).join(' · ') || t('common.nameless');
 }
 
 function updateProgress() {

@@ -12,7 +12,7 @@ from valhalla.models.enums import (
 from valhalla.models.links import EntityLink
 from valhalla.models.media import MediaAsset
 from valhalla.models.metrics import Metric, MetricEntry
-from valhalla.models.music import Track
+from valhalla.models.music import Playlist, Track
 from valhalla.models.planning import DayPlan, PlanSlot
 from valhalla.models.preferences import Preference
 from valhalla.models.reminders import Reminder
@@ -34,6 +34,7 @@ __all__ = [
     "MetricDirection",
     "MetricEntry",
     "PlanSlot",
+    "Playlist",
     "Preference",
     "Reminder",
     "ReminderCadence",

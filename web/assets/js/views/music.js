@@ -6,12 +6,15 @@ import { openLinks } from '../core/links-ui.js';
 import { closeModal, formModal, openModal } from '../core/modal.js';
 import { anchor, focusEntity } from '../core/navigation.js';
 import {
+  activePlaylistId,
   currentTrack,
   isPlaying,
   musicVolume,
   playTrack,
   playlist,
+  playlists,
   refreshPlaylist,
+  selectPlaylist,
   setMusicVolume,
   toggle,
 } from '../core/player.js';
@@ -22,41 +25,130 @@ import { toast } from '../core/toast.js';
 export async function renderMusic(container, params = {}) {
   container.dispatchEvent(new CustomEvent('view:teardown'));
   await Promise.all([loadMedia(), refreshPlaylist()]);
-  const tracks = playlist();
+
   const reload = () => renderMusic(container);
+  const current = activePlaylistId();
 
-  setHeader(t('nav.music'), t('music.subtitle', { count: tracks.length }), [
-    el('button', { class: 'btn', text: t('music.fromLibrary'), onclick: () => libraryModal(reload) }),
-    el('button', { class: 'btn primary', text: t('music.upload'), onclick: () => upload(reload) }),
-  ]);
+  drawHeader(current, reload);
 
-  if (!tracks.length) {
+  if (!playlists().length) {
     mount(
       container,
-      volumeBlock(),
       emptyState(
-        t('music.emptyTitle'),
-        t('music.emptyHint'),
+        t('music.noPlaylists'),
+        t('music.noPlaylistsHint'),
         el('button', {
           class: 'btn primary',
           style: { marginTop: '14px' },
-          text: t('music.uploadMusic'),
-          onclick: () => upload(reload),
+          text: t('music.newPlaylist'),
+          onclick: () => playlistForm(null, reload),
         })
       )
     );
     return;
   }
 
-  const list = el('div', { class: 'list' });
-  const paint = () => mount(list, tracks.map((track, index) => row(track, index, tracks, reload)));
+  const board = el('div', { class: 'split' });
+  const shelf = el('div', { class: 'stack' });
+  const stage = el('div', { class: 'stack' });
+  mount(board, shelf, stage);
+
+  const paint = () => {
+    const chosen = activePlaylistId();
+    drawHeader(chosen, reload);
+    mount(
+      shelf,
+      el('div', { class: 'section-title' }, el('span', { text: t('music.playlists') })),
+      generalCard(playlists(), chosen),
+      playlists().map((album) => playlistCard(album, chosen, reload))
+    );
+    mount(stage, volumeBlock(), trackList(playlist(), chosen, reload));
+  };
   paint();
 
   const off = on('player', paint);
   container.addEventListener('view:teardown', off, { once: true });
 
-  mount(container, volumeBlock(), list);
+  mount(container, board);
   focusEntity(container, params);
+}
+
+function drawHeader(current, reload) {
+  setHeader(t('nav.music'), t('music.subtitle', { count: playlist().length }), [
+    el('button', {
+      class: 'btn',
+      text: t('music.newPlaylist'),
+      onclick: () => playlistForm(null, reload),
+    }),
+    el('button', {
+      class: 'btn',
+      text: t('music.fromLibrary'),
+      disabled: current === null,
+      title: current === null ? t('music.pickPlaylist') : '',
+      onclick: () => libraryModal(current, reload),
+    }),
+    el('button', {
+      class: 'btn primary',
+      text: t('music.upload'),
+      disabled: current === null,
+      title: current === null ? t('music.pickPlaylist') : '',
+      onclick: () => upload(current, reload),
+    }),
+  ]);
+}
+
+function generalCard(albums, current) {
+  const total = albums.reduce((sum, album) => sum + album.track_count, 0);
+  return el(
+    'button',
+    {
+      class: `playlist-card${current === null ? ' on' : ''}`,
+      onclick: () => selectPlaylist(null),
+    },
+    el('span', { class: 'playlist-cover blank', text: '✦' }),
+    el(
+      'span',
+      { class: 'playlist-body' },
+      el('strong', { text: t('music.general') }),
+      el('small', { text: t('music.generalHint', { count: total }) })
+    )
+  );
+}
+
+function playlistCard(album, current, reload) {
+  return el(
+    'div',
+    { class: `playlist-row${album.id === current ? ' on' : ''}` },
+    el(
+      'button',
+      { class: 'playlist-card', onclick: () => selectPlaylist(album.id) },
+      album.cover_url
+        ? el('img', { class: 'playlist-cover', src: album.cover_url, alt: album.name })
+        : el('span', { class: 'playlist-cover blank', text: '♪' }),
+      el(
+        'span',
+        { class: 'playlist-body' },
+        el('strong', { text: album.name }),
+        el('small', { text: t('music.trackCount', { count: album.track_count }) })
+      )
+    ),
+    el(
+      'div',
+      { class: 'playlist-tools' },
+      el('button', {
+        class: 'btn sm ghost',
+        text: '⚙',
+        title: t('common.edit'),
+        onclick: () => playlistForm(album, reload),
+      }),
+      el('button', {
+        class: 'btn sm ghost danger',
+        text: '✕',
+        title: t('music.deletePlaylistTitle'),
+        onclick: () => removePlaylist(album, reload),
+      })
+    )
+  );
 }
 
 function volumeBlock() {
@@ -72,22 +164,32 @@ function volumeBlock() {
 
   return el(
     'div',
-    { class: 'card', style: { marginBottom: '16px' } },
+    { class: 'card' },
     el(
       'label',
       { class: 'field' },
       el('span', { text: t('music.volume') }),
       slider,
-      el('p', {
-        class: 'muted',
-        style: { margin: '6px 0 0' },
-        text: t('music.volumeHint'),
-      })
+      el('p', { class: 'muted', style: { margin: '6px 0 0' }, text: t('music.volumeHint') })
     )
   );
 }
 
-function row(track, index, tracks, reload) {
+function trackList(tracks, current, reload) {
+  if (!tracks.length) {
+    return emptyState(
+      t('music.emptyTitle'),
+      current === null ? t('music.emptyGeneralHint') : t('music.emptyHint')
+    );
+  }
+  return el(
+    'div',
+    { class: 'list' },
+    tracks.map((track, index) => row(track, index, tracks, current, reload))
+  );
+}
+
+function row(track, index, tracks, current, reload) {
   const active = currentTrack();
   const isCurrent = Boolean(active) && active.id === track.id;
   const playing = isCurrent && isPlaying();
@@ -122,16 +224,84 @@ function row(track, index, tracks, reload) {
       el('div', { text: track.title }),
       el('small', { text: [track.artist, meta.join(' · ')].filter(Boolean).join(' — ') })
     ),
-    el('button', { class: 'btn sm ghost', text: '↑', onclick: () => move(-1) }),
-    el('button', { class: 'btn sm ghost', text: '↓', onclick: () => move(1) }),
+    current !== null
+      ? el('button', { class: 'btn sm ghost', text: '↑', onclick: () => move(-1) })
+      : null,
+    current !== null
+      ? el('button', { class: 'btn sm ghost', text: '↓', onclick: () => move(1) })
+      : null,
     el('button', {
       class: 'btn sm ghost',
       text: t('common.links'),
       onclick: () => openLinks('track', track.id, track.title),
     }),
-    el('button', { class: 'btn sm ghost', text: t('common.edit'), onclick: () => trackForm(track, reload) }),
-    el('button', { class: 'btn sm ghost danger', text: '✕', onclick: () => removeTrack(track, reload) })
+    el('button', {
+      class: 'btn sm ghost',
+      text: t('common.edit'),
+      onclick: () => trackForm(track, reload),
+    }),
+    el('button', {
+      class: 'btn sm ghost danger',
+      text: '✕',
+      onclick: () => removeTrack(track, reload),
+    })
   );
+}
+
+function playlistForm(album, onDone) {
+  formModal({
+    title: album ? t('music.playlistEdit') : t('music.newPlaylist'),
+    subtitle: t('music.playlistHint'),
+    fields: [
+      { name: 'name', label: t('music.playlistName'), value: album?.name || '' },
+      {
+        name: 'icon_id',
+        label: t('music.cover'),
+        type: 'media',
+        kind: 'image',
+        value: album?.icon_id ?? null,
+        help: t('music.coverHint'),
+      },
+    ],
+    onSubmit: async (values) => {
+      if (!values.name.trim()) throw new Error(t('common.titleRequired'));
+      if (album) await api.updatePlaylist(album.id, values);
+      else await api.createPlaylist(values);
+      toast(t('music.playlistSaved'), values.name);
+      await onDone();
+    },
+  });
+}
+
+function removePlaylist(album, onDone) {
+  const drop = async (withFiles) => {
+    closeModal();
+    try {
+      await api.deletePlaylist(album.id, withFiles);
+      await onDone();
+    } catch (error) {
+      toast(t('music.removeFailed'), error.message, { tone: 'warn' });
+    }
+  };
+
+  openModal({
+    title: t('music.deletePlaylistTitle'),
+    subtitle: album.name,
+    content: [el('p', { class: 'muted', text: t('music.deletePlaylistText') })],
+    actions: [
+      el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
+      el('button', {
+        class: 'btn ghost danger',
+        text: t('music.removeWithFiles'),
+        onclick: () => drop(true),
+      }),
+      el('button', {
+        class: 'btn primary',
+        text: t('music.removeKeepFiles'),
+        onclick: () => drop(false),
+      }),
+    ],
+  });
 }
 
 function trackForm(track, onDone) {
@@ -163,21 +333,24 @@ function removeTrack(track, onDone) {
   openModal({
     title: t('music.removeTitle'),
     subtitle: track.title,
-    content: [
-      el('p', {
-        class: 'muted',
-        text: t('music.removeHint'),
-      }),
-    ],
+    content: [el('p', { class: 'muted', text: t('music.removeHint') })],
     actions: [
       el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
-      el('button', { class: 'btn ghost danger', text: t('music.removeWithFile'), onclick: () => drop(true) }),
-      el('button', { class: 'btn primary', text: t('music.removeFromList'), onclick: () => drop(false) }),
+      el('button', {
+        class: 'btn ghost danger',
+        text: t('music.removeWithFile'),
+        onclick: () => drop(true),
+      }),
+      el('button', {
+        class: 'btn primary',
+        text: t('music.removeFromList'),
+        onclick: () => drop(false),
+      }),
     ],
   });
 }
 
-function upload(onDone) {
+function upload(playlistId, onDone) {
   const input = el('input', { type: 'file', accept: 'audio/*', multiple: true });
   input.onchange = async () => {
     const files = Array.from(input.files || []);
@@ -185,7 +358,7 @@ function upload(onDone) {
     let added = 0;
     for (const file of files) {
       try {
-        await api.uploadTrack(file, file.name.replace(/\.[^.]+$/, ''));
+        await api.uploadTrack(playlistId, file, file.name.replace(/\.[^.]+$/, ''));
         added += 1;
       } catch (error) {
         toast(t('music.uploadFailed'), `${file.name}: ${error.message}`, { tone: 'warn' });
@@ -200,13 +373,11 @@ function upload(onDone) {
   input.click();
 }
 
-async function libraryModal(onDone) {
+async function libraryModal(playlistId, onDone) {
   const found = await api.scanVault();
   if (found.discovered) await loadMedia(true);
 
-  const taken = new Set(playlist().map((track) => track.asset_id));
-  const options = mediaOfKind('audio').filter((asset) => !taken.has(asset.id));
-
+  const options = mediaOfKind('audio').filter((asset) => asset.collection !== 'playlist');
   if (!options.length) {
     toast(t('common.empty'), t('music.allTaken'), { tone: 'warn' });
     return;
@@ -249,7 +420,10 @@ async function libraryModal(onDone) {
       ? t('music.libraryFound', { count: found.discovered })
       : t('music.librarySubtitle'),
     content: [content],
-    actions: [el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }), submit],
+    actions: [
+      el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
+      submit,
+    ],
   });
 
   submit.onclick = async () => {
@@ -257,7 +431,7 @@ async function libraryModal(onDone) {
     submit.disabled = true;
     for (const assetId of chosen) {
       try {
-        await api.createTrack({ asset_id: assetId });
+        await api.createTrack({ playlist_id: playlistId, asset_id: assetId });
       } catch (error) {
         toast(t('music.addFailed'), error.message, { tone: 'warn' });
       }
