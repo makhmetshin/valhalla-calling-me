@@ -20,6 +20,7 @@ DEFAULTS: dict[str, Any] = {
     "player.volume": 0.6,
     "player.collapsed": False,
     "player.track_id": None,
+    "player.playlist_id": None,
     "backgrounds": {},
 }
 

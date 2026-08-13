@@ -56,6 +56,11 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def playlists_dir(self) -> Path:
+        return self.audio_dir / "playlist"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def video_dir(self) -> Path:
         return self.vault_dir / "video"
 
@@ -91,7 +96,7 @@ class Settings(BaseSettings):
             self.images_dir / "icons",
             self.images_dir / "backgrounds",
             self.audio_dir,
-            self.audio_dir / "playlist",
+            self.playlists_dir,
             self.video_dir,
             self.fonts_dir,
             self.backups_dir,

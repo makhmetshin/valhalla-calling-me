@@ -119,4 +119,4 @@ def sync_presets(session: DbSession) -> dict[str, int]:
 @router.post("/vault/scan")
 def scan_vault(session: DbSession) -> dict[str, int]:
     discovered = media_service.scan_vault(session)
-    return {"discovered": discovered, "tracks": music_service.sync_playlist(session)}
+    return {"discovered": discovered, "tracks": music_service.sync_playlists(session)}

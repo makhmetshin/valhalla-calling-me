@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from valhalla.config import get_settings
 from valhalla.db.base import Base
+from valhalla.db.migrations import apply_migrations
 
 _settings = get_settings()
 _settings.ensure_layout()
@@ -34,6 +35,7 @@ def init_database() -> None:
     import valhalla.models  # noqa: F401
 
     Base.metadata.create_all(engine)
+    apply_migrations(engine)
 
 
 @contextmanager
