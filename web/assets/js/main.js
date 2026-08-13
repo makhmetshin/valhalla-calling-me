@@ -1,10 +1,10 @@
 import { api } from './core/api.js';
-import { applyFonts } from './core/backgrounds.js';
 import { el } from './core/dom.js';
 import { ENTITY_LABELS } from './core/format.js';
 import { initPlayer } from './core/player.js';
 import { navigate, registerRoutes, setBadge, startRouter } from './core/router.js';
 import { loadMedia, loadPreferences } from './core/state.js';
+import { applyAppearance } from './core/themes.js';
 import { playReminder } from './core/audio.js';
 import { toast } from './core/toast.js';
 import { renderAchievements } from './views/achievements.js';
@@ -114,7 +114,7 @@ async function refreshProgress() {
 
 async function boot() {
   await Promise.all([loadPreferences(), loadMedia()]);
-  applyFonts();
+  applyAppearance();
   registerRoutes(ROUTES);
   startRouter('dashboard');
   initPlayer();
