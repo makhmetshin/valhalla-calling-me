@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(9, 14, 20, 0.94), rgba(5, 8, 12, 0.97));
+  background: linear-gradient(180deg, rgb(var(--deep-rgb) / 0.94), rgb(var(--abyss-rgb) / 0.97));
   backdrop-filter: blur(3px);
 }
 
@@ -76,15 +76,15 @@
 }
 
 .rail nav button:hover {
-  background: rgba(111, 159, 200, 0.07);
+  background: var(--wash-faint);
   color: var(--ink-strong);
 }
 
 .rail nav button.active {
-  background: linear-gradient(90deg, rgba(111, 159, 200, 0.16), transparent);
+  background: linear-gradient(90deg, var(--wash), transparent);
   border-color: var(--line);
   color: var(--ink-strong);
-  box-shadow: inset 2px 0 0 var(--frost);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .rail nav button.active img {
@@ -96,8 +96,8 @@
   min-width: 20px;
   padding: 1px 6px;
   border-radius: 10px;
-  background: rgba(111, 159, 200, 0.2);
-  color: var(--frost-bright);
+  background: var(--wash-strong);
+  color: var(--accent-soft);
   font-family: var(--font-body);
   font-size: 11px;
   letter-spacing: 0;
@@ -115,7 +115,7 @@
   font-size: 10px;
   letter-spacing: 0.18em;
   line-height: 1.9;
-  color: #4d5f72;
+  color: rgb(var(--muted-rgb) / 0.72);
   text-transform: uppercase;
 }
 
@@ -128,7 +128,7 @@
 .progress-orb i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--frost), var(--frost-bright));
+  background: linear-gradient(90deg, var(--accent), var(--accent-soft));
 }
 
 .stage {

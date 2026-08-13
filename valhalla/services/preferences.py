@@ -8,13 +8,17 @@ from sqlalchemy.orm import Session
 from valhalla.models import Preference
 
 DEFAULTS: dict[str, Any] = {
-    "theme.accent": "#6f9fc8",
+    "theme.palette": "",
+    "theme.accent": "",
     "theme.font_heading": "",
     "theme.font_body": "",
     "audio.master_volume": 0.7,
     "audio.unlock_sound_id": None,
     "audio.reminder_sound_id": None,
     "codex.page_turn": True,
+    "player.volume": 0.6,
+    "player.collapsed": False,
+    "player.track_id": None,
     "backgrounds": {},
 }
 

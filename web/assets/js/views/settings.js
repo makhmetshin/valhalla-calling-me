@@ -1,12 +1,22 @@
 import { api } from '../core/api.js';
-import { applyBackground, applyFonts } from '../core/backgrounds.js';
+import { applyBackground } from '../core/backgrounds.js';
 import { confirmDialog, el, mount } from '../core/dom.js';
 import { formatBytes } from '../core/format.js';
 import { formModal } from '../core/modal.js';
 import { currentRoute, setHeader } from '../core/router.js';
 import { loadMedia, loadPreferences, mediaOfKind, savePreferences, state } from '../core/state.js';
+import {
+  THEMES,
+  accentOverride,
+  activeTheme,
+  applyAppearance,
+  effectiveAccent,
+  swatch,
+} from '../core/themes.js';
 import { playUrl } from '../core/audio.js';
 import { toast } from '../core/toast.js';
+
+const LOOK_KEYS = ['theme.palette', 'theme.accent', 'theme.font_heading', 'theme.font_body'];
 
 const PAGES = [
   { name: 'default', title: 'По умолчанию' },
@@ -61,6 +71,8 @@ export async function renderSettings(container) {
     container,
     el('div', { class: 'section-title' }, el('span', { text: 'Звук' })),
     soundBlock(container),
+    el('div', { class: 'section-title' }, el('span', { text: 'Темы' })),
+    themesBlock(container),
     el('div', { class: 'section-title' }, el('span', { text: 'Облик' })),
     lookBlock(container),
     el('div', { class: 'section-title' }, el('span', { text: 'Фоны страниц' })),
@@ -68,7 +80,9 @@ export async function renderSettings(container) {
     el('div', { class: 'section-title' }, el('span', { text: 'Хранилище' })),
     vaultBlock(vault, backups, container),
     el('div', { class: 'section-title' }, el('span', { text: 'Библиотека медиа' })),
-    mediaBlock(container)
+    mediaBlock(container),
+    el('div', { class: 'section-title' }, el('span', { text: 'Сброс' })),
+    resetBlock()
   );
 }
 
@@ -160,15 +174,41 @@ function soundBlock(container) {
   );
 }
 
+function themesBlock(container) {
+  const current = activeTheme();
+
+  return el(
+    'div',
+    { class: 'grid', style: { gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' } },
+    THEMES.map((theme) =>
+      el(
+        'button',
+        {
+          class: `theme-card${theme.name === current.name ? ' on' : ''}`,
+          onclick: async () => {
+            await savePreferences({ 'theme.palette': theme.name, 'theme.accent': '' });
+            applyAppearance();
+            renderSettings(container);
+          },
+        },
+        swatch(theme),
+        el('strong', { text: theme.title }),
+        el('span', { text: theme.hint })
+      )
+    )
+  );
+}
+
 function lookBlock(container) {
   const accent = el('input', {
     type: 'color',
-    value: state.preferences['theme.accent'] || '#6f9fc8',
-    style: { width: '100%', height: '38px', padding: '2px', background: '#070b10' },
+    value: effectiveAccent(),
+    style: { width: '100%', height: '38px', padding: '2px', background: 'var(--sunken)' },
   });
   accent.onchange = async () => {
     await savePreferences({ 'theme.accent': accent.value });
-    applyFonts();
+    applyAppearance();
+    renderSettings(container);
   };
 
   const fontSelect = (key, label) => {
@@ -188,7 +228,7 @@ function lookBlock(container) {
     );
     select.onchange = async () => {
       await savePreferences({ [key]: select.value || '' });
-      applyFonts();
+      applyAppearance();
     };
     return field(label, select, 'файлы шрифтов клади в vault/fonts');
   };
@@ -196,22 +236,63 @@ function lookBlock(container) {
   return el(
     'div',
     { class: 'card grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' } },
-    field('Акцентный цвет', accent),
+    field(
+      'Акцентный цвет',
+      accent,
+      accentOverride() ? 'свой цвет поверх темы' : `цвет темы «${activeTheme().title}»`
+    ),
     fontSelect('theme.font_heading', 'Шрифт заголовков'),
     fontSelect('theme.font_body', 'Шрифт текста'),
     el(
       'div',
-      { style: { alignSelf: 'end' } },
+      { class: 'row', style: { alignSelf: 'end' } },
+      el('button', {
+        class: 'btn',
+        text: 'Цвет темы',
+        disabled: !accentOverride(),
+        onclick: async () => {
+          await savePreferences({ 'theme.accent': '' });
+          applyAppearance();
+          renderSettings(container);
+        },
+      }),
       el('button', {
         class: 'btn ghost',
         text: 'Сбросить облик',
         onclick: async () => {
-          await savePreferences({ 'theme.accent': '#6f9fc8', 'theme.font_heading': '', 'theme.font_body': '' });
-          applyFonts();
+          await api.resetPreferences(LOOK_KEYS);
+          await loadPreferences(true);
+          applyAppearance();
           renderSettings(container);
         },
       })
     )
+  );
+}
+
+function resetBlock() {
+  return el(
+    'div',
+    { class: 'card row between' },
+    el(
+      'div',
+      {},
+      el('div', { class: 'card-title', text: 'Вернуть настройки по умолчанию' }),
+      el('p', {
+        class: 'muted',
+        style: { margin: '6px 0 0' },
+        text: 'Тема, цвет, шрифты, фоны, громкость и звуки станут как при первом запуске. Ачивки, метрики, таски, кодекс, музыка и файлы останутся на месте.',
+      })
+    ),
+    el('button', {
+      class: 'btn danger',
+      text: 'Сбросить всё',
+      onclick: async () => {
+        if (!confirmDialog('Вернуть все настройки к значениям по умолчанию?')) return;
+        await api.resetPreferences();
+        window.location.reload();
+      },
+    })
   );
 }
 

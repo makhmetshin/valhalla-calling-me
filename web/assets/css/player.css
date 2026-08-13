@@ -6,7 +6,7 @@
   display: none;
   align-items: stretch;
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(17, 26, 37, 0.97), rgba(7, 11, 16, 0.97));
+  background: linear-gradient(180deg, rgb(var(--panel-rgb) / 0.97), rgb(var(--sunken-rgb) / 0.97));
   box-shadow: var(--shadow);
   overflow: hidden;
   transition: box-shadow 200ms ease;
@@ -26,14 +26,14 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(29, 42, 56, 0.7);
+  background: rgb(var(--line-rgb) / 0.7);
 }
 
 .player-progress i {
   display: block;
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, rgba(111, 159, 200, 0.6), var(--frost-bright));
+  background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.6), var(--accent-soft));
 }
 
 .player-controls {
@@ -59,11 +59,11 @@
 .player-btn:hover {
   color: var(--ink-strong);
   border-color: var(--line);
-  background: rgba(111, 159, 200, 0.1);
+  background: var(--wash-soft);
 }
 
 .player-btn.main {
-  color: var(--frost-bright);
+  color: var(--accent-soft);
 }
 
 .player-now {
@@ -102,14 +102,14 @@
 }
 
 .player-now:hover strong {
-  color: var(--frost-bright);
+  color: var(--accent-soft);
 }
 
 .player-fold {
   width: 20px;
   border: none;
   border-left: 1px solid var(--line-soft);
-  background: rgba(9, 14, 20, 0.6);
+  background: rgb(var(--deep-rgb) / 0.6);
   color: var(--muted);
   font-size: 13px;
   cursor: pointer;
@@ -117,7 +117,7 @@
 
 .player-fold:hover {
   color: var(--ink-strong);
-  background: rgba(111, 159, 200, 0.1);
+  background: var(--wash-soft);
 }
 
 .player.collapsed .player-now {
@@ -128,8 +128,8 @@
 }
 
 .list-item.now {
-  background: rgba(111, 159, 200, 0.09);
-  box-shadow: inset 2px 0 0 var(--frost);
+  background: rgb(var(--accent-rgb) / 0.09);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .list-item.now .title div {

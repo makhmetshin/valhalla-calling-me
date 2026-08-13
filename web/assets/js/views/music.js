@@ -219,7 +219,7 @@ async function libraryModal(onDone) {
         { class: 'list-item', style: { cursor: 'pointer' } },
         el('input', {
           type: 'checkbox',
-          style: { width: '16px', height: '16px', accentColor: 'var(--frost)' },
+          style: { width: '16px', height: '16px', accentColor: 'var(--accent)' },
           onchange: (event) => {
             if (event.target.checked) chosen.add(asset.id);
             else chosen.delete(asset.id);

@@ -10,7 +10,7 @@
   position: sticky;
   top: 0;
   border: 1px solid var(--line);
-  background: rgba(8, 13, 19, 0.86);
+  background: rgb(var(--deep-rgb) / 0.86);
   max-height: calc(100vh - 190px);
   overflow-y: auto;
 }
@@ -38,7 +38,7 @@
 }
 
 .codex-tree .chapter > .chapter-row:hover {
-  background: rgba(111, 159, 200, 0.07);
+  background: var(--wash-faint);
   color: var(--ink-strong);
 }
 
@@ -70,7 +70,7 @@
   padding: 6px 10px;
   border: none;
   background: none;
-  color: #8ea1b5;
+  color: var(--steel);
   font-size: 13px;
   cursor: pointer;
   border-left: 2px solid transparent;
@@ -78,13 +78,13 @@
 
 .codex-tree .entry:hover {
   color: var(--ink-strong);
-  background: rgba(111, 159, 200, 0.06);
+  background: var(--wash-faint);
 }
 
 .codex-tree .entry.active {
-  color: var(--frost-bright);
-  border-left-color: var(--frost);
-  background: rgba(111, 159, 200, 0.1);
+  color: var(--accent-soft);
+  border-left-color: var(--accent);
+  background: var(--wash-soft);
 }
 
 .book {
@@ -96,12 +96,12 @@
   position: relative;
   border: 1px solid var(--line);
   background:
-    linear-gradient(180deg, rgba(18, 27, 38, 0.96), rgba(10, 16, 23, 0.96)),
-    radial-gradient(circle at 88% 6%, rgba(111, 159, 200, 0.08), transparent 52%);
+    linear-gradient(180deg, rgb(var(--panel-rgb) / 0.96), rgb(var(--deep-rgb) / 0.96)),
+    radial-gradient(circle at 88% 6%, rgb(var(--accent-rgb) / 0.08), transparent 52%);
   padding: 34px 40px 44px;
   min-height: 560px;
   transform-origin: left center;
-  box-shadow: inset 1px 0 0 rgba(111, 159, 200, 0.12), var(--shadow);
+  box-shadow: inset 1px 0 0 rgb(var(--accent-rgb) / 0.12), var(--shadow);
 }
 
 .page::before {
@@ -111,7 +111,7 @@
   top: 0;
   bottom: 0;
   width: 26px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent);
+  background: linear-gradient(90deg, rgb(var(--shade-rgb) / 0.45), transparent);
   pointer-events: none;
 }
 
@@ -193,12 +193,12 @@
   max-width: 72ch;
   font-size: 15px;
   line-height: 1.82;
-  color: #aebecf;
+  color: var(--ink);
 }
 
 .page-prose h3 {
   margin: 26px 0 10px;
-  color: var(--frost-bright);
+  color: var(--accent-soft);
 }
 
 .page-prose strong {
@@ -206,7 +206,7 @@
 }
 
 .page-prose em {
-  color: var(--frost);
+  color: var(--accent);
   font-style: normal;
 }
 
@@ -256,7 +256,7 @@
   z-index: 90;
   display: grid;
   place-items: center;
-  background: rgba(3, 5, 8, 0.9);
+  background: rgb(var(--shade-rgb) / 0.9);
   cursor: zoom-out;
 }
 

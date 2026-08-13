@@ -39,6 +39,10 @@ export const api = {
 
   preferences: () => get('/preferences'),
   savePreferences: (values) => put('/preferences', { values }),
+  resetPreferences: (keys = []) => {
+    const query = keys.map((key) => `keys=${encodeURIComponent(key)}`).join('&');
+    return post(`/preferences/reset${query ? `?${query}` : ''}`);
+  },
 
   media: (kind) => get(`/media${kind ? `?kind=${kind}` : ''}`),
   uploadMedia: (file, title = '') => {
