@@ -33,6 +33,7 @@
   display: flex;
   gap: 13px;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .card-title {
@@ -42,6 +43,7 @@
   color: var(--ink-strong);
   text-transform: uppercase;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .card-body {
@@ -49,11 +51,13 @@
   font-size: 13.5px;
   color: var(--steel);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .card-foot {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
   padding-top: 12px;
@@ -351,6 +355,7 @@ label.check input {
 .list-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 11px 14px;
   border-bottom: 1px solid var(--line-soft);
@@ -370,8 +375,9 @@ label.check input {
 }
 
 .list-item .title {
-  flex: 1;
+  flex: 1 1 180px;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .list-item .title small {
@@ -462,12 +468,31 @@ label.check input {
   padding: 10px;
 }
 
+.picker-body {
+  max-height: 268px;
+  overflow-y: auto;
+}
+
+.picker-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+  color: var(--muted);
+  font-family: var(--font-head);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.picker-group:first-child {
+  margin-top: 0;
+}
+
 .picker-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
   gap: 8px;
-  max-height: 216px;
-  overflow-y: auto;
 }
 
 .picker-grid button {
@@ -651,7 +676,8 @@ label.check input {
 .slot {
   position: relative;
   display: flex;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   align-items: center;
   padding: 12px 14px;
   border: 1px solid var(--line-soft);
@@ -672,6 +698,17 @@ label.check input {
 .slot.now {
   border-color: var(--edge-soft);
   background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.slot.done {
+  opacity: 0.68;
+}
+
+.slot.done time,
+.slot.done .title,
+.slot.done .link-pill span {
+  text-decoration: line-through;
+  color: var(--muted);
 }
 
 .slot time {
@@ -699,11 +736,14 @@ label.check input {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
   padding: 5px 10px;
   border: 1px solid var(--line);
   background: rgb(var(--panel-rgb) / 0.8);
   color: var(--steel);
   font-size: 12px;
+  text-align: left;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -716,6 +756,8 @@ label.check input {
 .link-pill {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
   gap: 7px;
   padding: 3px 9px;
   border: 1px solid var(--line);
@@ -736,6 +778,7 @@ label.check input {
 }
 
 .link-pill em {
+  flex: none;
   color: var(--muted);
   font-style: normal;
   font-size: 10px;
@@ -743,7 +786,15 @@ label.check input {
   text-transform: uppercase;
 }
 
+.link-pill span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .link-pill small {
+  flex: none;
   color: var(--accent-soft);
   font-size: 11px;
 }

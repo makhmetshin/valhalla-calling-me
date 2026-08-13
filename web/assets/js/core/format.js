@@ -27,6 +27,12 @@ export const ENTITY_LABELS = {
   track: 'музыка',
 };
 
+export const MEDIA_COLLECTIONS = {
+  icons: 'Иконки',
+  backgrounds: 'Фоны',
+  uploads: 'Свои',
+};
+
 export const TASK_STATES = {
   open: 'открыта',
   active: 'в бою',

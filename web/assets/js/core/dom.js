@@ -40,6 +40,14 @@ export function mount(node, ...children) {
   return append(node, children);
 }
 
+export function glyph(name, size = '') {
+  const url = `url("/presets/glyphs/${name}.svg")`;
+  return el('i', {
+    class: `glyph${size ? ` ${size}` : ''}`,
+    style: { maskImage: url, webkitMaskImage: url },
+  });
+}
+
 export function iconPlate(media, size = '') {
   const cls = `icon-plate${size ? ` ${size}` : ''}`;
   if (!media) return el('div', { class: `${cls} blank` }, '✦');

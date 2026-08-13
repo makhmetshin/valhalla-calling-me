@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from valhalla.config import get_settings
-from valhalla.media_paths import KIND_DIRECTORIES, absolute_path
+from valhalla.media_paths import GLYPH_COLLECTION, KIND_DIRECTORIES, absolute_path
 from valhalla.models import MediaAsset, MediaKind, MediaOrigin
 from valhalla.services.errors import ConflictError, ValidationError
 from valhalla.services.repository import require
@@ -196,6 +196,8 @@ def sync_presets(session: Session) -> int:
     discovered = 0
     for path in sorted(presets_root.rglob("*")):
         if not path.is_file():
+            continue
+        if path.relative_to(presets_root).parts[0] == GLYPH_COLLECTION:
             continue
         mime_type = guess_mime_type(path.name)
         try:

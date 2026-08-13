@@ -20,10 +20,22 @@
   border-bottom: 1px solid var(--line-soft);
 }
 
-.sigil img {
-  width: 38px;
-  height: 38px;
-  opacity: 0.9;
+.glyph {
+  display: block;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  background: currentColor;
+  mask: center / contain no-repeat;
+  -webkit-mask: center / contain no-repeat;
+}
+
+.sigil .glyph {
+  width: 36px;
+  height: 36px;
+  color: var(--accent);
+  mask-image: url("/presets/glyphs/valknut.svg");
+  -webkit-mask-image: url("/presets/glyphs/valknut.svg");
 }
 
 .sigil strong {
@@ -69,10 +81,8 @@
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
-.rail nav button img {
-  width: 22px;
-  height: 22px;
-  opacity: 0.65;
+.rail nav button .glyph {
+  opacity: 0.72;
 }
 
 .rail nav button:hover {
@@ -87,8 +97,9 @@
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
-.rail nav button.active img {
+.rail nav button.active .glyph {
   opacity: 1;
+  color: var(--accent-soft);
 }
 
 .rail nav .badge {
@@ -183,10 +194,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .row.between {
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .row.wrap {

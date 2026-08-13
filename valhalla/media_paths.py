@@ -15,6 +15,16 @@ KIND_DIRECTORIES: dict[MediaKind, str] = {
 VAULT_MOUNT = "/vault"
 PRESET_MOUNT = "/presets"
 
+UPLOAD_COLLECTION = "uploads"
+GLYPH_COLLECTION = "glyphs"
+
+
+def collection_of(origin: MediaOrigin, relative_path: str) -> str:
+    if origin == MediaOrigin.UPLOAD:
+        return UPLOAD_COLLECTION
+    head, separator, _ = relative_path.replace("\\", "/").lstrip("/").partition("/")
+    return head if separator else UPLOAD_COLLECTION
+
 
 def public_url(kind: MediaKind, origin: MediaOrigin, relative_path: str) -> str:
     normalized = relative_path.replace("\\", "/").lstrip("/")

@@ -5,7 +5,7 @@ import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { entityLink, focusTarget } from '../core/navigation.js';
 import { setHeader } from '../core/router.js';
-import { toast } from '../core/toast.js';
+import { celebrateAll, toast } from '../core/toast.js';
 
 const UNIT_PRESETS = [10, 15, 20, 25, 30, 45, 60, 90];
 
@@ -21,8 +21,9 @@ export async function renderPlan(container, params = {}) {
     planId: null,
   };
 
-  const tasks = await api.tasks();
-  const openTasks = tasks.filter((task) => task.state !== 'done' && task.state !== 'abandoned');
+  let tasks = await api.tasks();
+  const taskById = (id) => tasks.find((task) => task.id === id) || null;
+  const openTasks = () => tasks.filter((task) => task.state !== 'done' && task.state !== 'abandoned');
 
   const board = el('div', { class: 'split' });
   mount(container, board);
@@ -140,8 +141,8 @@ export async function renderPlan(container, params = {}) {
       el(
         'div',
         { class: 'chips' },
-        openTasks.length
-          ? openTasks.map((task) =>
+        openTasks().length
+          ? openTasks().map((task) =>
               el('button', {
                 class: 'chip',
                 text: task.title,
@@ -188,10 +189,20 @@ export async function renderPlan(container, params = {}) {
         ? el(
             'div',
             { class: 'timeline' },
-            computed.map((slot) =>
-              el(
+            computed.map((slot) => {
+              const task = slot.task_id ? taskById(slot.task_id) : null;
+              const isDone = Boolean(task) && task.state === 'done';
+              return el(
                 'div',
-                { class: 'slot' },
+                { class: `slot${isDone ? ' done' : ''}` },
+                task
+                  ? el('button', {
+                      class: `checkmark${isDone ? ' on' : ''}`,
+                      text: '✓',
+                      title: isDone ? 'вернуть в работу' : 'отметить исполненной',
+                      onclick: () => setDone(task, !isDone),
+                    })
+                  : null,
                 el('time', { text: `${clock(slot.from)} — ${clock(slot.to)}` }),
                 el(
                   'div',
@@ -220,8 +231,8 @@ export async function renderPlan(container, params = {}) {
                     draw();
                   },
                 })
-              )
-            )
+              );
+            })
           )
         : el('div', { class: 'empty' }, el('h3', { text: 'Расписание пустое' }), el('p', { text: 'Выбери таски слева — время посчитается само.' })),
       el(
@@ -277,6 +288,13 @@ export async function renderPlan(container, params = {}) {
         },
       })
     );
+  }
+
+  async function setDone(task, done) {
+    const result = await api.setTaskState(task.id, done ? 'done' : 'open');
+    tasks = await api.tasks();
+    if (done) celebrateAll(result.unlocked);
+    draw();
   }
 
   function move(index, direction) {
