@@ -1,0 +1,220 @@
+import { api } from './api.js';
+import { clear, el, mount } from './dom.js';
+import { navigate } from './router.js';
+import { emit, savePreferences, state } from './state.js';
+import { toast } from './toast.js';
+
+const dock = document.getElementById('player');
+const sound = new Audio();
+sound.preload = 'auto';
+
+const player = {
+  tracks: [],
+  index: -1,
+  collapsed: false,
+};
+
+let progressBar = null;
+
+export function playlist() {
+  return player.tracks;
+}
+
+export function currentTrack() {
+  return player.tracks[player.index] || null;
+}
+
+export function playerSnapshot() {
+  return {
+    track: currentTrack(),
+    index: player.index,
+    count: player.tracks.length,
+    playing: isPlaying(),
+  };
+}
+
+export function isPlaying() {
+  return Boolean(sound.src) && !sound.paused;
+}
+
+export function musicVolume() {
+  const value = Number(state.preferences['player.volume']);
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.6;
+}
+
+export async function setMusicVolume(value) {
+  sound.volume = Math.min(1, Math.max(0, value));
+  await savePreferences({ 'player.volume': sound.volume });
+}
+
+export function playTrack(id) {
+  const index = player.tracks.findIndex((item) => item.id === id);
+  if (index >= 0) load(index, true);
+}
+
+export function next() {
+  load(player.index + 1, true);
+}
+
+export function previous() {
+  load(player.index - 1, true);
+}
+
+export function toggle() {
+  if (!player.tracks.length) return;
+  if (!sound.src) {
+    load(Math.max(player.index, 0), true);
+    return;
+  }
+  if (sound.paused) sound.play().catch(() => {});
+  else sound.pause();
+  announce();
+}
+
+export function stop() {
+  sound.pause();
+  sound.currentTime = 0;
+  announce();
+}
+
+export async function refreshPlaylist() {
+  const active = currentTrack();
+  player.tracks = await api.tracks();
+
+  if (!player.tracks.length) {
+    unload();
+    player.index = -1;
+    announce();
+    return player.tracks;
+  }
+
+  const index = active ? player.tracks.findIndex((item) => item.id === active.id) : -1;
+  if (index >= 0) {
+    player.index = index;
+  } else {
+    if (active) unload();
+    player.index = Math.min(Math.max(player.index, 0), player.tracks.length - 1);
+  }
+  announce();
+  return player.tracks;
+}
+
+export async function initPlayer() {
+  player.collapsed = Boolean(state.preferences['player.collapsed']);
+  sound.volume = musicVolume();
+  await refreshPlaylist();
+
+  const lastId = state.preferences['player.track_id'];
+  const index = player.tracks.findIndex((item) => item.id === lastId);
+  if (index >= 0) {
+    player.index = index;
+    sound.src = player.tracks[index].asset.url;
+  }
+  announce();
+}
+
+function load(index, autoplay) {
+  if (!player.tracks.length) return;
+  const size = player.tracks.length;
+  const bounded = ((index % size) + size) % size;
+  const track = player.tracks[bounded];
+
+  player.index = bounded;
+  sound.src = track.asset.url;
+  sound.volume = musicVolume();
+  savePreferences({ 'player.track_id': track.id }).catch(() => {});
+
+  if (autoplay) {
+    sound
+      .play()
+      .then(() => {
+        track.play_count += 1;
+        return api.trackPlayed(track.id);
+      })
+      .catch(() => {});
+  }
+  announce();
+}
+
+function unload() {
+  sound.pause();
+  sound.removeAttribute('src');
+  sound.load();
+}
+
+function setCollapsed(value) {
+  player.collapsed = value;
+  savePreferences({ 'player.collapsed': value }).catch(() => {});
+  announce();
+}
+
+function announce() {
+  render();
+  emit('player', playerSnapshot());
+}
+
+function render() {
+  if (!player.tracks.length) {
+    dock.classList.remove('live');
+    clear(dock);
+    progressBar = null;
+    return;
+  }
+
+  const track = currentTrack();
+  const playing = isPlaying();
+  progressBar = el('i');
+
+  mount(
+    dock,
+    el('div', { class: 'player-progress' }, progressBar),
+    el(
+      'div',
+      { class: 'player-controls' },
+      el('button', { class: 'player-btn', title: 'Предыдущая', text: '◀◀', onclick: previous }),
+      el('button', {
+        class: 'player-btn main',
+        title: playing ? 'Пауза' : 'Играть',
+        text: playing ? '❚❚' : '▶',
+        onclick: toggle,
+      }),
+      el('button', { class: 'player-btn', title: 'Следующая', text: '▶▶', onclick: next })
+    ),
+    el(
+      'button',
+      {
+        class: 'player-now',
+        title: 'Открыть страницу музыки',
+        onclick: () => navigate('music'),
+      },
+      el('strong', { text: track ? track.title : 'Ничего не выбрано' }),
+      el('span', { text: track && track.artist ? track.artist : 'без имени' })
+    ),
+    el('button', {
+      class: 'player-fold',
+      title: player.collapsed ? 'Развернуть' : 'Свернуть',
+      text: player.collapsed ? '‹' : '›',
+      onclick: () => setCollapsed(!player.collapsed),
+    })
+  );
+
+  dock.classList.add('live');
+  dock.classList.toggle('collapsed', player.collapsed);
+  updateProgress();
+}
+
+function updateProgress() {
+  if (!progressBar) return;
+  const ratio = sound.duration ? sound.currentTime / sound.duration : 0;
+  progressBar.style.width = `${ratio * 100}%`;
+}
+
+sound.addEventListener('play', announce);
+sound.addEventListener('pause', announce);
+sound.addEventListener('timeupdate', updateProgress);
+sound.addEventListener('ended', () => load(player.index + 1, true));
+sound.addEventListener('error', () => {
+  const track = currentTrack();
+  if (!sound.src || !track) return;
+  toast('Не читается', `${track.title} — файла нет в vault/audio`, { tone: 'warn' });
+});

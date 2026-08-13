@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="storm" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" stop-color="#070a0f"/><stop offset="0.5" stop-color="#131c26"/>
+<stop offset="1" stop-color="#1d2a37"/></linearGradient>
+</defs>
+<rect width="1600" height="900" fill="url(#storm)"/>
+<g fill="#243444" opacity="0.55">
+<ellipse cx="380" cy="250" rx="420" ry="130"/>
+<ellipse cx="1080" cy="180" rx="480" ry="110"/>
+<ellipse cx="760" cy="420" rx="560" ry="150"/>
+</g>
+<g fill="#0d151d" opacity="0.7">
+<ellipse cx="200" cy="620" rx="520" ry="170"/>
+<ellipse cx="1300" cy="700" rx="560" ry="190"/>
+</g>
+<g stroke="#8fb0cc" stroke-opacity="0.18" stroke-width="2">
+<path d="M1180 120 L1120 330 L1190 320 L1110 520"/>
+</g>
+</svg>

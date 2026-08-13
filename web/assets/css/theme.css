@@ -1,0 +1,139 @@
+:root {
+  --abyss: #05080c;
+  --deep: #080d13;
+  --panel: #0d141d;
+  --panel-raised: #111a25;
+  --line: #1d2a38;
+  --line-soft: #16212d;
+  --ink: #c8d6e5;
+  --ink-strong: #eef4fa;
+  --muted: #708399;
+  --frost: #6f9fc8;
+  --frost-bright: #a9c8e4;
+  --steel: #9fb6cd;
+  --danger: #a8555a;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.62);
+  --radius: 4px;
+  --font-head: "Cinzel", "Trajan Pro", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-rune: "Noto Sans Runic", "Segoe UI Historic", var(--font-head);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--abyss);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-strong);
+}
+
+h1 {
+  font-size: 26px;
+  letter-spacing: 0.16em;
+}
+
+h2 {
+  font-size: 17px;
+}
+
+h3 {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+}
+
+a {
+  color: var(--frost-bright);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dim {
+  opacity: 0.55;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: radial-gradient(circle at 30% 12%, #14202c 0%, #05080c 62%);
+  background-size: cover;
+  background-position: center;
+  transition: opacity 600ms ease;
+}
+
+.backdrop video,
+.backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.backdrop-veil {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 8, 12, 0.72), rgba(5, 8, 12, 0.9)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.012) 0 1px,
+      transparent 1px 3px
+    );
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1b2735;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #27384a;
+  background-clip: content-box;
+}
+
+::selection {
+  background: rgba(111, 159, 200, 0.32);
+}

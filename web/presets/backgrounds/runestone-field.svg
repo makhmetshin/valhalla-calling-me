@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+<defs>
+<radialGradient id="glow" cx="0.5" cy="0.35" r="0.7">
+<stop offset="0" stop-color="#1d2c3b"/><stop offset="1" stop-color="#070b10"/></radialGradient>
+</defs>
+<rect width="1600" height="900" fill="url(#glow)"/>
+<g fill="#0e161f" stroke="#4c657e" stroke-opacity="0.35" stroke-width="3">
+<path d="M180 780 L160 470 C160 380 340 380 340 470 L320 780 Z"/>
+<path d="M700 800 L676 420 C676 320 900 320 900 420 L876 800 Z"/>
+<path d="M1260 770 L1244 500 C1244 420 1400 420 1400 500 L1384 770 Z"/>
+</g>
+<g stroke="#7fa0bd" stroke-opacity="0.30" stroke-width="4" fill="none" stroke-linecap="round">
+<path d="M230 500 L230 700 M230 530 L290 495 M230 610 L290 645"/>
+<path d="M760 470 L760 720 M760 470 L840 520 M840 520 L760 570"/>
+<path d="M1300 540 L1300 700 M1270 560 L1330 560 M1270 640 L1330 640"/>
+</g>
+<rect y="760" width="1600" height="140" fill="#060a0e" opacity="0.85"/>
+</svg>

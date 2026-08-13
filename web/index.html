@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valhalla Calling</title>
+<link rel="stylesheet" href="/assets/css/theme.css">
+<link rel="stylesheet" href="/assets/css/layout.css">
+<link rel="stylesheet" href="/assets/css/components.css">
+<link rel="stylesheet" href="/assets/css/codex.css">
+<link rel="stylesheet" href="/assets/css/player.css">
+</head>
+<body>
+<div class="backdrop" id="backdrop"></div>
+<div class="backdrop-veil"></div>
+<div class="player" id="player"></div>
+
+<div class="frame">
+  <aside class="rail">
+    <div class="sigil">
+      <img src="/presets/icons/valknut.svg" alt="">
+      <div>
+        <strong>VALHALLA</strong>
+        <span>CALLING</span>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="rail-foot">
+      <div class="progress-orb" id="railProgress"></div>
+      <p class="rail-motto">Судьба уже решена.<br>Остаётся идти.</p>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <header class="stage-head">
+      <div>
+        <h1 id="viewTitle">Чертог</h1>
+        <p id="viewSubtitle" class="muted"></p>
+      </div>
+      <div class="stage-actions" id="viewActions"></div>
+    </header>
+    <section class="stage-body" id="view"></section>
+  </main>
+</div>
+
+<div class="toast-stack" id="toasts"></div>
+<div class="modal-root" id="modalRoot"></div>
+<div class="rite" id="rite"></div>
+
+<script type="module" src="/assets/js/main.js"></script>
+</body>
+</html>

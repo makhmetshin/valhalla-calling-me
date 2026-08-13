@@ -1,0 +1,137 @@
+.player {
+  position: fixed;
+  left: 254px;
+  bottom: 22px;
+  z-index: 50;
+  display: none;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(17, 26, 37, 0.97), rgba(7, 11, 16, 0.97));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow 200ms ease;
+}
+
+.player.live {
+  display: flex;
+}
+
+.player.live ~ .frame .stage-body {
+  padding-bottom: 96px;
+}
+
+.player-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(29, 42, 56, 0.7);
+}
+
+.player-progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, rgba(111, 159, 200, 0.6), var(--frost-bright));
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px 6px;
+}
+
+.player-btn {
+  width: 34px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--steel);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.player-btn:hover {
+  color: var(--ink-strong);
+  border-color: var(--line);
+  background: rgba(111, 159, 200, 0.1);
+}
+
+.player-btn.main {
+  color: var(--frost-bright);
+}
+
+.player-now {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 250px;
+  max-width: 250px;
+  padding: 8px 16px 6px 10px;
+  border: none;
+  border-left: 1px solid var(--line-soft);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.player-now strong {
+  font-family: var(--font-head);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-now span {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-now:hover strong {
+  color: var(--frost-bright);
+}
+
+.player-fold {
+  width: 20px;
+  border: none;
+  border-left: 1px solid var(--line-soft);
+  background: rgba(9, 14, 20, 0.6);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.player-fold:hover {
+  color: var(--ink-strong);
+  background: rgba(111, 159, 200, 0.1);
+}
+
+.player.collapsed .player-now {
+  width: 0;
+  max-width: 0;
+  padding: 0;
+  border-left: none;
+}
+
+.list-item.now {
+  background: rgba(111, 159, 200, 0.09);
+  box-shadow: inset 2px 0 0 var(--frost);
+}
+
+.list-item.now .title div {
+  color: var(--ink-strong);
+}
