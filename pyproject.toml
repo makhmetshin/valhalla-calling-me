@@ -4,6 +4,11 @@ version = "0.1.0"
 description = "Локальная система выхода из депрессии в тематике северной мифологии"
 requires-python = ">=3.12"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

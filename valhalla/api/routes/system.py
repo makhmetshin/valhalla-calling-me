@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from pydantic import BaseModel
 
 from valhalla import __version__
@@ -81,7 +81,9 @@ def write_preferences(session: DbSession, payload: PreferencePatch) -> dict[str,
 
 
 @router.post("/preferences/reset")
-def reset_preferences(session: DbSession, keys: list[str] | None = None) -> dict[str, Any]:
+def reset_preferences(
+    session: DbSession, keys: Annotated[list[str] | None, Query()] = None
+) -> dict[str, Any]:
     return preference_service.reset(session, keys)
 
 

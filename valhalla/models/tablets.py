@@ -24,9 +24,13 @@ class TabletKind(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="TabletColumn.position",
         lazy="selectin",
+        passive_deletes=True,
     )
     pages: Mapped[list[TabletPage]] = relationship(
-        back_populates="kind", cascade="all, delete-orphan", order_by="TabletPage.position"
+        back_populates="kind",
+        cascade="all, delete-orphan",
+        order_by="TabletPage.position",
+        passive_deletes=True,
     )
 
 
@@ -60,6 +64,7 @@ class TabletPage(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="TabletRow.position",
         lazy="selectin",
+        passive_deletes=True,
     )
 
 
@@ -74,7 +79,10 @@ class TabletRow(Base):
 
     page: Mapped[TabletPage] = relationship(back_populates="rows")
     cells: Mapped[list[TabletCell]] = relationship(
-        back_populates="row", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="row",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        passive_deletes=True,
     )
 
 
