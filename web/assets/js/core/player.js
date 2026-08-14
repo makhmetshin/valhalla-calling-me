@@ -199,21 +199,30 @@ function render() {
   const playing = isPlaying();
   progressBar = el('i');
 
+  const line = el(
+    'div',
+    {
+      class: 'player-progress',
+      title: t('music.seek'),
+      onmousedown: (event) => {
+        if (event.button) return;
+        event.preventDefault();
+        seekAt(event, line);
+        const drag = (moving) => seekAt(moving, line);
+        const release = () => {
+          document.removeEventListener('mousemove', drag);
+          document.removeEventListener('mouseup', release);
+        };
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', release);
+      },
+    },
+    progressBar
+  );
+
   mount(
     dock,
-    el('div', { class: 'player-progress' }, progressBar),
-    el(
-      'div',
-      { class: 'player-controls' },
-      el('button', { class: 'player-btn', title: t('music.previous'), text: '◀◀', onclick: previous }),
-      el('button', {
-        class: 'player-btn main',
-        title: playing ? t('music.pause') : t('music.play'),
-        text: playing ? '❚❚' : '▶',
-        onclick: toggle,
-      }),
-      el('button', { class: 'player-btn', title: t('music.next'), text: '▶▶', onclick: next })
-    ),
+    line,
     el(
       'button',
       {
@@ -224,12 +233,24 @@ function render() {
       el('strong', { text: track ? track.title : t('music.nothingChosen') }),
       el('span', { text: secondLine(track) })
     ),
-    el('button', {
-      class: 'player-fold',
-      title: player.collapsed ? t('music.expand') : t('music.collapse'),
-      text: player.collapsed ? '‹' : '›',
-      onclick: () => setCollapsed(!player.collapsed),
-    })
+    el(
+      'div',
+      { class: 'player-controls' },
+      el('button', { class: 'player-btn', title: t('music.previous'), text: '◀◀', onclick: previous }),
+      el('button', {
+        class: 'player-btn main',
+        title: playing ? t('music.pause') : t('music.play'),
+        text: playing ? '❚❚' : '▶',
+        onclick: toggle,
+      }),
+      el('button', { class: 'player-btn', title: t('music.next'), text: '▶▶', onclick: next }),
+      el('button', {
+        class: 'player-fold',
+        title: player.collapsed ? t('music.expand') : t('music.collapse'),
+        text: player.collapsed ? '›' : '‹',
+        onclick: () => setCollapsed(!player.collapsed),
+      })
+    )
   );
 
   dock.classList.add('live');
@@ -241,6 +262,14 @@ function secondLine(track) {
   const album = activePlaylist();
   const parts = [track && track.artist ? track.artist : null, album ? album.name : null];
   return parts.filter(Boolean).join(' · ') || t('common.nameless');
+}
+
+function seekAt(event, node) {
+  if (!Number.isFinite(sound.duration) || !sound.duration) return;
+  const box = node.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+  sound.currentTime = ratio * sound.duration;
+  updateProgress();
 }
 
 function updateProgress() {

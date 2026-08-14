@@ -9,17 +9,15 @@ import {
   activePlaylistId,
   currentTrack,
   isPlaying,
-  musicVolume,
   playTrack,
   playlist,
   playlists,
   refreshPlaylist,
   selectPlaylist,
-  setMusicVolume,
   toggle,
 } from '../core/player.js';
 import { setHeader } from '../core/router.js';
-import { loadMedia, mediaOfKind, on } from '../core/state.js';
+import { loadMedia, on } from '../core/state.js';
 import { toast } from '../core/toast.js';
 
 export async function renderMusic(container, params = {}) {
@@ -62,7 +60,7 @@ export async function renderMusic(container, params = {}) {
       generalCard(playlists(), chosen),
       playlists().map((album) => playlistCard(album, chosen, reload))
     );
-    mount(stage, volumeBlock(), trackList(playlist(), chosen, reload));
+    mount(stage, trackList(playlist(), chosen, reload));
   };
   paint();
 
@@ -79,13 +77,6 @@ function drawHeader(current, reload) {
       class: 'btn',
       text: t('music.newPlaylist'),
       onclick: () => playlistForm(null, reload),
-    }),
-    el('button', {
-      class: 'btn',
-      text: t('music.fromLibrary'),
-      disabled: current === null,
-      title: current === null ? t('music.pickPlaylist') : '',
-      onclick: () => libraryModal(current, reload),
     }),
     el('button', {
       class: 'btn primary',
@@ -147,30 +138,6 @@ function playlistCard(album, current, reload) {
         title: t('music.deletePlaylistTitle'),
         onclick: () => removePlaylist(album, reload),
       })
-    )
-  );
-}
-
-function volumeBlock() {
-  const slider = el('input', {
-    type: 'range',
-    min: 0,
-    max: 1,
-    step: 0.05,
-    value: musicVolume(),
-    style: { width: '100%' },
-  });
-  slider.oninput = () => setMusicVolume(Number(slider.value));
-
-  return el(
-    'div',
-    { class: 'card' },
-    el(
-      'label',
-      { class: 'field' },
-      el('span', { text: t('music.volume') }),
-      slider,
-      el('p', { class: 'muted', style: { margin: '6px 0 0' }, text: t('music.volumeHint') })
     )
   );
 }
@@ -371,72 +338,4 @@ function upload(playlistId, onDone) {
     }
   };
   input.click();
-}
-
-async function libraryModal(playlistId, onDone) {
-  const found = await api.scanVault();
-  if (found.discovered) await loadMedia(true);
-
-  const options = mediaOfKind('audio').filter((asset) => asset.collection !== 'playlist');
-  if (!options.length) {
-    toast(t('common.empty'), t('music.allTaken'), { tone: 'warn' });
-    return;
-  }
-
-  const chosen = new Set();
-  const content = el(
-    'div',
-    { class: 'list' },
-    options.map((asset) =>
-      el(
-        'label',
-        { class: 'list-item', style: { cursor: 'pointer' } },
-        el('input', {
-          type: 'checkbox',
-          style: { width: '16px', height: '16px', accentColor: 'var(--accent)' },
-          onchange: (event) => {
-            if (event.target.checked) chosen.add(asset.id);
-            else chosen.delete(asset.id);
-          },
-        }),
-        el(
-          'div',
-          { class: 'title' },
-          el('div', { text: asset.title }),
-          el('small', {
-            text: `${asset.origin === 'preset' ? t('common.preset') : t('common.own')} · ${formatBytes(
-              asset.size_bytes
-            )}`,
-          })
-        )
-      )
-    )
-  );
-
-  const submit = el('button', { class: 'btn primary', text: t('music.add') });
-  openModal({
-    title: t('music.fromLibrary'),
-    subtitle: found.discovered
-      ? t('music.libraryFound', { count: found.discovered })
-      : t('music.librarySubtitle'),
-    content: [content],
-    actions: [
-      el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
-      submit,
-    ],
-  });
-
-  submit.onclick = async () => {
-    if (!chosen.size) return;
-    submit.disabled = true;
-    for (const assetId of chosen) {
-      try {
-        await api.createTrack({ playlist_id: playlistId, asset_id: assetId });
-      } catch (error) {
-        toast(t('music.addFailed'), error.message, { tone: 'warn' });
-      }
-    }
-    closeModal();
-    await onDone();
-  };
 }
