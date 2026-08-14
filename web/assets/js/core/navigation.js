@@ -12,6 +12,8 @@ const ROUTE_BY_KIND = {
   reminder: 'reminders',
   codex_chapter: 'codex',
   codex_entry: 'codex',
+  tablet_kind: 'tablets',
+  tablet_page: 'tablets',
   track: 'music',
 };
 

@@ -182,6 +182,10 @@ function buildControl(field) {
       const picker = entityPicker(field);
       return { node: labelled(field, picker.node), read: picker.read };
     }
+    case 'columns': {
+      const editor = columnEditor(field);
+      return { node: labelled(field, editor.node), read: editor.read };
+    }
     case 'date':
     case 'time':
     case 'datetime-local': {
@@ -197,6 +201,80 @@ function buildControl(field) {
       return { node: labelled(field, input), read: () => input.value };
     }
   }
+}
+
+function columnEditor(field) {
+  const limit = field.max || 12;
+  const rows = (field.value || []).map((column) => ({
+    id: column.id ?? null,
+    title: column.title || '',
+  }));
+  if (!rows.length) rows.push({ id: null, title: '' });
+
+  const list = el('div', { class: 'stack', style: { gap: '6px' } });
+  const add = el('button', {
+    class: 'btn sm ghost',
+    text: t('tab.addColumn'),
+    onclick: (event) => {
+      event.preventDefault();
+      if (rows.length >= limit) return;
+      rows.push({ id: null, title: '' });
+      draw();
+    },
+  });
+
+  function draw() {
+    mount(
+      list,
+      rows.map((row, index) =>
+        el(
+          'div',
+          { class: 'row', style: { gap: '6px' } },
+          el('input', {
+            type: 'text',
+            value: row.title,
+            placeholder: t('tab.columnName', { index: index + 1 }),
+            style: { flex: '1 1 auto', minWidth: '0' },
+            oninput: (event) => {
+              row.title = event.target.value;
+            },
+          }),
+          el('button', {
+            class: 'btn sm ghost',
+            text: '↑',
+            title: t('tab.raiseColumn'),
+            disabled: index === 0,
+            onclick: (event) => {
+              event.preventDefault();
+              [rows[index - 1], rows[index]] = [rows[index], rows[index - 1]];
+              draw();
+            },
+          }),
+          el('button', {
+            class: 'btn sm ghost danger',
+            text: '✕',
+            title: t('tab.dropColumn'),
+            disabled: rows.length < 2,
+            onclick: (event) => {
+              event.preventDefault();
+              rows.splice(index, 1);
+              draw();
+            },
+          })
+        )
+      ),
+      add
+    );
+  }
+
+  draw();
+  return {
+    node: list,
+    read: () =>
+      rows
+        .map((row) => ({ id: row.id, title: row.title.trim() }))
+        .filter((row) => row.title.length),
+  };
 }
 
 function entityPicker(field) {

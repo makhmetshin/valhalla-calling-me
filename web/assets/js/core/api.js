@@ -106,6 +106,20 @@ export const api = {
   updateEntry: (id, payload) => patch(`/codex/entries/${id}`, payload),
   deleteEntry: (id) => remove(`/codex/entries/${id}`),
 
+  tabletKinds: () => get('/tablets/kinds'),
+  createTabletKind: (payload) => post('/tablets/kinds', payload),
+  updateTabletKind: (id, payload) => patch(`/tablets/kinds/${id}`, payload),
+  deleteTabletKind: (id) => remove(`/tablets/kinds/${id}`),
+  tabletPages: (kindId) => get(`/tablets/kinds/${kindId}/pages`),
+  tabletPage: (id) => get(`/tablets/pages/${id}`),
+  createTabletPage: (payload) => post('/tablets/pages', payload),
+  saveTabletPage: (id, payload) => patch(`/tablets/pages/${id}`, payload),
+  deleteTabletPage: (id) => remove(`/tablets/pages/${id}`),
+  addTabletRow: (id) => post(`/tablets/pages/${id}/rows`),
+
+  exportCodex: (language) => post(`/export/codex?language=${language}`),
+  exportTablets: (language) => post(`/export/tablets?language=${language}`),
+
   playlists: () => get('/music/playlists'),
   createPlaylist: (payload) => post('/music/playlists', payload),
   updatePlaylist: (id, payload) => patch(`/music/playlists/${id}`, payload),

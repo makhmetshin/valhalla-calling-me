@@ -20,6 +20,8 @@ export const ENTITY_KINDS = [
   'reminder',
   'codex_chapter',
   'codex_entry',
+  'tablet_kind',
+  'tablet_page',
   'track',
 ];
 

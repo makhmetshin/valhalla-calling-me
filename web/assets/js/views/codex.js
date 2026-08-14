@@ -1,7 +1,7 @@
 import { api } from '../core/api.js';
 import { clear, el, mount } from '../core/dom.js';
 import { formatDateTime, renderProse } from '../core/format.js';
-import { t } from '../core/i18n.js';
+import { language, t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { focusTarget } from '../core/navigation.js';
@@ -37,6 +37,11 @@ export async function renderCodex(container, params = {}) {
   mount(container, el('div', { class: 'codex' }, nav, book));
 
   setHeader(t('nav.codex'), t('codex.subtitle'), [
+    el('button', {
+      class: 'btn ghost',
+      text: t('codex.export'),
+      onclick: (event) => exportCodex(event.target),
+    }),
     el('button', { class: 'btn', text: t('codex.newChapter'), onclick: () => chapterForm(null, outline, () => renderCodex(container)) }),
     el('button', {
       class: 'btn primary',
@@ -402,6 +407,21 @@ function addImage(entry, onDone) {
       await onDone();
     },
   });
+}
+
+async function exportCodex(button) {
+  button.disabled = true;
+  try {
+    const result = await api.exportCodex(language());
+    toast(
+      t('codex.exported'),
+      t('tab.exportWhere', { count: result.files.length, path: result.directory })
+    );
+  } catch (error) {
+    toast(t('common.failed'), error.message, { tone: 'warn' });
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function lightbox(url) {

@@ -30,6 +30,7 @@ const PAGE_NAMES = [
   'plan',
   'reminders',
   'codex',
+  'tablets',
   'music',
   'settings',
 ];
