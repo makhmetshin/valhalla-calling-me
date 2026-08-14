@@ -331,14 +331,14 @@ function entityPicker(field) {
 }
 
 function mediaPicker(field) {
-  const kind = field.kind || 'image';
+  const kinds = Array.isArray(field.kind) ? field.kind : [field.kind || 'image'];
   let selected = field.value ?? null;
 
   const grid = el('div', { class: 'picker-body' });
   const search = el('input', { type: 'search', placeholder: t('common.search') });
   const file = el('input', {
     type: 'file',
-    accept: kind === 'image' ? 'image/*' : kind === 'audio' ? 'audio/*' : 'video/*',
+    accept: kinds.map((name) => `${name}/*`).join(','),
     style: { display: 'none' },
   });
   const uploadButton = el('button', {
@@ -376,11 +376,11 @@ function mediaPicker(field) {
         onclick: (event) => {
           event.preventDefault();
           selected = asset.id;
-          if (kind === 'audio') previewUrl(asset.url);
+          if (asset.kind === 'audio') previewUrl(asset.url);
           render();
         },
       },
-      kind === 'image'
+      asset.kind === 'image'
         ? el('img', { src: asset.url, alt: asset.title, loading: 'lazy' })
         : el('span', {
             class: 'muted',
@@ -392,9 +392,9 @@ function mediaPicker(field) {
 
   function render() {
     const query = search.value.trim().toLowerCase();
-    const assets = mediaOfKind(kind).filter(
-      (asset) => !query || asset.title.toLowerCase().includes(query)
-    );
+    const assets = kinds
+      .flatMap((name) => mediaOfKind(name))
+      .filter((asset) => !query || asset.title.toLowerCase().includes(query));
 
     const groups = new Map();
     for (const asset of assets) {
