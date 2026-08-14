@@ -76,6 +76,11 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def exports_dir(self) -> Path:
+        return self.vault_dir / "exports"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def presets_dir(self) -> Path:
         return self.web_dir / "presets"
 
@@ -100,6 +105,7 @@ class Settings(BaseSettings):
             self.video_dir,
             self.fonts_dir,
             self.backups_dir,
+            self.exports_dir,
         ):
             directory.mkdir(parents=True, exist_ok=True)
 

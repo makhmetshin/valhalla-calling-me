@@ -24,6 +24,8 @@ class EntityKind(StrEnum):
     REMINDER = "reminder"
     CODEX_CHAPTER = "codex_chapter"
     CODEX_ENTRY = "codex_entry"
+    TABLET_KIND = "tablet_kind"
+    TABLET_PAGE = "tablet_page"
     TRACK = "track"
 
 

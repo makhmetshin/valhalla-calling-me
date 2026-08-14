@@ -17,6 +17,7 @@ import { renderMusic } from './views/music.js';
 import { renderPlan } from './views/plan.js';
 import { renderReminders } from './views/reminders.js';
 import { renderSettings } from './views/settings.js';
+import { renderTablets } from './views/tablets.js';
 import { renderTasks } from './views/tasks.js';
 
 const ROUTES = () => [
@@ -27,6 +28,7 @@ const ROUTES = () => [
   { name: 'plan', title: t('nav.plan'), icon: 'longship', render: renderPlan },
   { name: 'reminders', title: t('nav.reminders'), icon: 'raven', render: renderReminders },
   { name: 'codex', title: t('nav.codex'), icon: 'wolf', render: renderCodex },
+  { name: 'tablets', title: t('nav.tablets'), icon: 'rune-tiles', render: renderTablets },
   { name: 'music', title: t('nav.music'), icon: 'dawn-horn', render: renderMusic },
   { name: 'settings', title: t('nav.settings'), icon: 'vegvisir', render: renderSettings },
 ];

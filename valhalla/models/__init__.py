@@ -16,6 +16,13 @@ from valhalla.models.music import Playlist, Track
 from valhalla.models.planning import DayPlan, PlanSlot
 from valhalla.models.preferences import Preference
 from valhalla.models.reminders import Reminder
+from valhalla.models.tablets import (
+    TabletCell,
+    TabletColumn,
+    TabletKind,
+    TabletPage,
+    TabletRow,
+)
 from valhalla.models.tasks import Task
 
 __all__ = [
@@ -38,6 +45,11 @@ __all__ = [
     "Preference",
     "Reminder",
     "ReminderCadence",
+    "TabletCell",
+    "TabletColumn",
+    "TabletKind",
+    "TabletPage",
+    "TabletRow",
     "Task",
     "TaskState",
     "Track",

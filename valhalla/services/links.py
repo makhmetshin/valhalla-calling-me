@@ -14,6 +14,8 @@ from valhalla.models import (
     EntityLink,
     Metric,
     Reminder,
+    TabletKind,
+    TabletPage,
     Task,
     Track,
 )
@@ -30,6 +32,8 @@ ENTITY_MODELS: dict[EntityKind, type[Base]] = {
     EntityKind.REMINDER: Reminder,
     EntityKind.CODEX_CHAPTER: CodexChapter,
     EntityKind.CODEX_ENTRY: CodexEntry,
+    EntityKind.TABLET_KIND: TabletKind,
+    EntityKind.TABLET_PAGE: TabletPage,
     EntityKind.TRACK: Track,
 }
 
@@ -65,6 +69,15 @@ def _describe(kind: EntityKind, instance: Base) -> EntityRef:
         case EntityKind.CODEX_ENTRY:
             assert isinstance(instance, CodexEntry)
             return EntityRef(kind=kind, id=instance.id, label=instance.title)
+        case EntityKind.TABLET_KIND:
+            assert isinstance(instance, TabletKind)
+            detail = f"{len(instance.columns)} columns"
+            return EntityRef(kind=kind, id=instance.id, label=instance.title, detail=detail)
+        case EntityKind.TABLET_PAGE:
+            assert isinstance(instance, TabletPage)
+            return EntityRef(
+                kind=kind, id=instance.id, label=instance.title, detail=instance.kind.title
+            )
         case EntityKind.TRACK:
             assert isinstance(instance, Track)
             return EntityRef(
