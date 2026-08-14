@@ -79,6 +79,46 @@ def vegvisir() -> str:
     return "".join(body)
 
 
+HORN_CURVE = ((15.0, 17.0), (38.0, 19.0), (57.0, 37.0), (47.0, 53.0))
+HORN_MOUTH = 11.0
+
+
+def _horn_rib(t: float) -> tuple[tuple[float, float], tuple[float, float]]:
+    def along(index: int) -> float:
+        a, b, c, d = (node[index] for node in HORN_CURVE)
+        return (1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t**2 * c + t**3 * d
+
+    def tangent(index: int) -> float:
+        a, b, c, d = (node[index] for node in HORN_CURVE)
+        return 3 * ((1 - t) ** 2 * (b - a) + 2 * (1 - t) * t * (c - b) + t**2 * (d - c))
+
+    x, y = along(0), along(1)
+    dx, dy = tangent(0), tangent(1)
+    length = math.hypot(dx, dy) or 1.0
+    radius = HORN_MOUTH * (1 - t) ** 1.1
+    nx, ny = -dy / length * radius, dx / length * radius
+    return (x + nx, y + ny), (x - nx, y - ny)
+
+
+def mead_horn() -> str:
+    steps = [index / 20 for index in range(21)]
+    shell = [_horn_rib(t)[0] for t in steps] + [_horn_rib(t)[1] for t in reversed(steps)]
+    outline = " ".join(
+        f"{'M' if index == 0 else 'L'}{x:.1f} {y:.1f}" for index, (x, y) in enumerate(shell)
+    )
+    bands = "".join(
+        f'<path d="M{start[0]:.1f} {start[1]:.1f} L{end[0]:.1f} {end[1]:.1f}"/>'
+        for start, end in (_horn_rib(0.26), _horn_rib(0.38))
+    )
+    content = (
+        f'<path d="{outline}"/>'
+        f'<ellipse cx="16.4" cy="17.2" rx="3" ry="8.6" fill="{STEEL}" fill-opacity="0.34"/>'
+        '<ellipse cx="15" cy="17" rx="4" ry="11"/>'
+        f"{bands}"
+    )
+    return f'<g transform="rotate(90 32 32)">{content}</g>'
+
+
 ICONS: dict[str, str] = {
     "wolf": (
         '<path d="M32 55 L19 44 L13 29 L16 11 L27 21 L37 21 L48 11 L51 29 L45 44 Z"/>'
@@ -135,11 +175,6 @@ ICONS: dict[str, str] = {
         '<path d="M11 20 C34 22 50 32 57 49 C44 51 23 43 13 28 Z"/>'
         '<ellipse cx="12" cy="23" rx="4.5" ry="7" transform="rotate(-24 12 23)"/>'
         '<path d="M24 28 C32 31 40 37 45 44"/>'
-    ),
-    "valknut": (
-        polygon([(32, 6), (10, 44), (54, 44)])
-        + polygon([(22, 20), (54, 20), (38, 52)])
-        + polygon([(42, 20), (10, 20), (26, 52)])
     ),
     "gleipnir": (
         '<ellipse cx="18" cy="32" rx="12" ry="7" transform="rotate(-28 18 32)"/>'
@@ -201,14 +236,6 @@ ICONS: dict[str, str] = {
         '<path d="M12 32 L48 32"/>'
         '<path d="M41 27 L48 32 L41 37"/>'
     ),
-    "dragon-head": (
-        '<path d="M12 58 C13 44 16 32 24 24"/>'
-        '<path d="M24 24 C28 12 42 8 52 14 C46 18 46 22 52 26 '
-        'C44 30 42 34 46 40 C34 42 25 34 24 24 Z"/>'
-        '<circle cx="35" cy="21" r="2"/>'
-        '<path d="M26 15 L22 6"/><path d="M33 12 L33 3"/>'
-        '<path d="M18 36 L9 32"/><path d="M15 47 L6 44"/>'
-    ),
     "eagle": (
         '<circle cx="32" cy="17" r="5"/>'
         '<path d="M32 26 C24 13 12 8 3 15 C11 20 15 27 19 36 C23 31 27 29 32 31 Z"/>'
@@ -253,12 +280,7 @@ ICONS: dict[str, str] = {
         '<path d="M19 52 L15 59"/><path d="M45 52 L49 59"/>'
         '<path d="M21 20 C25 12 39 12 43 20"/>'
     ),
-    "mead-horn": (
-        '<path d="M48 9 C33 15 20 28 13 45 C11 51 16 56 20 52 C22 50 21 46 19 47 '
-        'C26 34 38 22 55 17 Z"/>'
-        '<ellipse cx="52" cy="13" rx="5.5" ry="8.5" transform="rotate(36 52 13)"/>'
-        '<path d="M26 32 C32 35 38 36 44 34"/>'
-    ),
+    "mead-horn": mead_horn(),
     "triquetra": (
         '<circle cx="32" cy="32" r="25" stroke-opacity="0.45"/>'
         '<path d="M32 36 C24 28 24 14 32 6 C40 14 40 28 32 36 Z"/>'

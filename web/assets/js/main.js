@@ -1,5 +1,4 @@
 import { api } from './core/api.js';
-import { el } from './core/dom.js';
 import { entityLabel } from './core/format.js';
 import { language, t } from './core/i18n.js';
 import { initPlayer } from './core/player.js';
@@ -22,7 +21,7 @@ import { renderTasks } from './views/tasks.js';
 
 const ROUTES = () => [
   { name: 'dashboard', title: t('nav.dashboard'), icon: 'yggdrasil', render: renderDashboard },
-  { name: 'achievements', title: t('nav.achievements'), icon: 'valknut', render: renderAchievements },
+  { name: 'achievements', title: t('nav.achievements'), icon: 'mead-horn', render: renderAchievements },
   { name: 'metrics', title: t('nav.metrics'), icon: 'rune-stone', render: renderMetrics },
   { name: 'tasks', title: t('nav.tasks'), icon: 'axe', render: renderTasks },
   { name: 'plan', title: t('nav.plan'), icon: 'longship', render: renderPlan },
@@ -34,7 +33,6 @@ const ROUTES = () => [
 ];
 
 const REMINDER_INTERVAL = 30000;
-const PROGRESS_INTERVAL = 60000;
 const shown = new Set();
 
 async function pollReminders() {
@@ -89,18 +87,6 @@ async function pollReminders() {
   }
 }
 
-async function refreshProgress() {
-  try {
-    const progress = await api.achievementProgress();
-    const ratio = progress.total ? progress.unlocked / progress.total : 0;
-    const orb = document.getElementById('railProgress');
-    orb.replaceChildren(el('i', { style: { width: `${ratio * 100}%` } }));
-    orb.title = `${progress.unlocked} / ${progress.total}`;
-  } catch (error) {
-    void error;
-  }
-}
-
 async function boot() {
   await Promise.all([loadPreferences(), loadMedia()]);
   applyAppearance();
@@ -109,10 +95,8 @@ async function boot() {
   registerRoutes(ROUTES());
   startRouter('dashboard');
   initPlayer();
-  refreshProgress();
   pollReminders();
   setInterval(pollReminders, REMINDER_INTERVAL);
-  setInterval(refreshProgress, PROGRESS_INTERVAL);
 }
 
 boot();

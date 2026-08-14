@@ -16,7 +16,8 @@ import {
   themeHint,
   themeTitle,
 } from '../core/themes.js';
-import { playUrl } from '../core/audio.js';
+import { onSound, previewUrl, soundPlaying, stopSound } from '../core/audio.js';
+import { musicVolume, setMusicVolume } from '../core/player.js';
 import { toast } from '../core/toast.js';
 
 const LOOK_KEYS = ['theme.palette', 'theme.accent', 'theme.font_heading', 'theme.font_body'];
@@ -44,6 +45,7 @@ const pages = () =>
 export async function renderSettings(container) {
   await Promise.all([loadMedia(true), loadPreferences(true)]);
   const [vault, backups] = await Promise.all([api.vault(), api.backups()]);
+  container.addEventListener('view:teardown', stopSound, { once: true });
 
   setHeader(t('nav.settings'), t('set.subtitle'), [
     el('button', {
@@ -109,13 +111,16 @@ function field(label, control, hint) {
 }
 
 function soundBlock(container) {
+  const soundFor = (key) =>
+    mediaOfKind('audio').find((item) => item.id === state.preferences[key]) || null;
+
   const preview = (key) => {
-    const asset = mediaOfKind('audio').find((item) => item.id === state.preferences[key]);
+    const asset = soundFor(key);
     if (!asset) {
       toast(t('set.soundMissing'), t('set.soundMissingHint'), { tone: 'warn' });
       return;
     }
-    playUrl(asset.url);
+    previewUrl(asset.url);
   };
 
   const volume = el('input', {
@@ -130,6 +135,16 @@ function soundBlock(container) {
     await savePreferences({ 'audio.master_volume': Number(volume.value) });
     preview('audio.unlock_sound_id');
   };
+
+  const music = el('input', {
+    type: 'range',
+    min: 0,
+    max: 1,
+    step: 0.05,
+    value: musicVolume(),
+    style: { width: '100%' },
+  });
+  music.oninput = () => setMusicVolume(Number(music.value));
 
   const soundSelect = (key, label) => {
     const select = el(
@@ -149,24 +164,33 @@ function soundBlock(container) {
       const id = select.value ? Number(select.value) : null;
       await savePreferences({ [key]: id });
       const asset = mediaOfKind('audio').find((item) => item.id === id);
-      if (asset) playUrl(asset.url);
+      if (asset) previewUrl(asset.url);
     };
-    return field(
-      label,
-      el(
-        'div',
-        { class: 'audio-row' },
-        select,
-        el('button', { class: 'btn sm', text: '▶', onclick: () => preview(key) })
-      ),
-      t('set.soundHint')
-    );
+
+    const button = el('button', { class: 'btn sm', text: '▶', title: t('set.previewSound') });
+    const paint = () => {
+      const asset = soundFor(key);
+      const playing = Boolean(asset) && soundPlaying(asset.url);
+      button.textContent = playing ? '■' : '▶';
+      button.title = playing ? t('set.stopSound') : t('set.previewSound');
+    };
+    button.onclick = () => {
+      const asset = soundFor(key);
+      if (asset && soundPlaying(asset.url)) stopSound();
+      else preview(key);
+    };
+    const off = onSound(paint);
+    container.addEventListener('view:teardown', off, { once: true });
+    paint();
+
+    return field(label, el('div', { class: 'audio-row' }, select, button), t('set.soundHint'));
   };
 
   return el(
     'div',
     { class: 'card grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' } },
     field(t('set.volume'), volume),
+    field(t('music.volume'), music),
     soundSelect('audio.unlock_sound_id', t('set.unlockSound')),
     soundSelect('audio.reminder_sound_id', t('set.reminderSound')),
     el(
@@ -208,8 +232,7 @@ function languageBlock() {
           },
         })
       )
-    ),
-    el('p', { class: 'muted', style: { margin: '0' }, text: t('set.languageHint') })
+    )
   );
 }
 

@@ -3,12 +3,13 @@ import { clear, el, mount } from './dom.js';
 import { COLLECTION_KEYS, ENTITY_KINDS, collectionLabel, entityLabel } from './format.js';
 import { t } from './i18n.js';
 import { loadMedia, mediaById, mediaOfKind } from './state.js';
-import { playUrl } from './audio.js';
+import { previewUrl, stopSound } from './audio.js';
 import { toast } from './toast.js';
 
 const root = document.getElementById('modalRoot');
 
 export function closeModal() {
+  stopSound();
   root.classList.remove('open');
   clear(root);
 }
@@ -375,7 +376,7 @@ function mediaPicker(field) {
         onclick: (event) => {
           event.preventDefault();
           selected = asset.id;
-          if (kind === 'audio') playUrl(asset.url);
+          if (kind === 'audio') previewUrl(asset.url);
           render();
         },
       },
