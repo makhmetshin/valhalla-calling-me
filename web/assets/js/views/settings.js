@@ -387,23 +387,7 @@ function backgroundsBlock(container) {
               })
             : null
         ),
-        config
-          ? el('div', {
-              style: {
-                marginTop: '10px',
-                height: '90px',
-                border: '1px solid var(--line)',
-                backgroundImage: config.kind === 'video' ? 'none' : `url("${config.url}")`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                display: 'grid',
-                placeItems: 'center',
-                color: 'var(--muted)',
-                fontSize: '12px',
-              },
-              text: config.kind === 'video' ? config.url.split('/').pop() : '',
-            })
-          : el('p', { class: 'muted', style: { marginTop: '10px' }, text: t('set.noBackground') }),
+        config ? backgroundPreview(config) : el('p', { class: 'muted', style: { marginTop: '10px' }, text: t('set.noBackground') }),
         el(
           'div',
           { class: 'card-foot' },
@@ -431,33 +415,45 @@ function backgroundsBlock(container) {
   );
 }
 
+function backgroundPreview(config) {
+  if (config.kind === 'video') {
+    return el('video', {
+      class: 'background-preview',
+      src: config.url,
+      autoplay: true,
+      loop: true,
+      muted: true,
+      playsInline: true,
+    });
+  }
+  return el('div', {
+    class: 'background-preview',
+    style: { backgroundImage: `url("${config.url}")` },
+  });
+}
+
 function backgroundForm(page, config, container) {
   formModal({
     title: t('set.backgroundFor', { page: page.title }),
     subtitle: t('set.backgroundHint'),
     fields: [
       {
-        name: 'kind',
-        label: t('set.kind'),
-        type: 'select',
-        value: config?.kind || 'image',
-        options: [
-          { value: 'image', label: t('set.kindImage') },
-          { value: 'video', label: t('set.kindVideo') },
-        ],
+        name: 'media_id',
+        label: t('set.backgroundFile'),
+        type: 'media',
+        kind: ['image', 'video'],
+        value: config?.media_id ?? null,
+        help: t('set.backgroundFileHint'),
       },
-      { name: 'image_id', label: t('set.image'), type: 'media', kind: 'image', value: config?.kind === 'image' ? config.media_id : null },
-      { name: 'video_id', label: t('set.video'), type: 'media', kind: 'video', value: config?.kind === 'video' ? config.media_id : null },
       { name: 'dim', label: t('set.dim'), type: 'number', step: 0.05, value: config?.dim ?? 0.7 },
       { name: 'blur', label: t('set.blur'), type: 'number', step: 1, value: config?.blur ?? 0 },
     ],
     onSubmit: async (values) => {
-      const mediaId = values.kind === 'video' ? values.video_id : values.image_id;
-      const asset = state.media.find((item) => item.id === mediaId);
+      const asset = state.media.find((item) => item.id === values.media_id);
       if (!asset) throw new Error(t('set.pickFile'));
       const next = { ...(state.preferences.backgrounds || {}) };
       next[page.name] = {
-        kind: values.kind,
+        kind: asset.kind === 'video' ? 'video' : 'image',
         media_id: asset.id,
         url: asset.url,
         dim: values.dim ?? 0.7,

@@ -64,6 +64,18 @@
   border-top: 1px solid var(--line-soft);
 }
 
+.background-preview {
+  display: block;
+  width: 100%;
+  height: 90px;
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  object-fit: cover;
+  background-color: var(--sunken);
+  background-size: cover;
+  background-position: center;
+}
+
 .theme-card {
   display: flex;
   flex-direction: column;

@@ -89,3 +89,35 @@ def test_a_missing_thing_answers_politely(client):
 
     assert response.status_code == 404
     assert "detail" in response.json()
+
+
+def test_a_video_can_be_kept_as_a_background(client, settings):
+    (settings.video_dir / "aurora.mp4").write_bytes(bytes.fromhex("0000001866747970"))
+    client.post("/api/vault/scan")
+
+    video = next(
+        item for item in client.get("/api/media?kind=video").json() if item["title"] == "aurora"
+    )
+    stored = client.put(
+        "/api/preferences",
+        json={
+            "values": {
+                "backgrounds": {
+                    "dashboard": {
+                        "kind": "video",
+                        "media_id": video["id"],
+                        "url": video["url"],
+                        "dim": 0.7,
+                        "blur": 0,
+                    }
+                }
+            }
+        },
+    ).json()
+
+    assert video["url"] == "/vault/video/aurora.mp4"
+    assert client.get(video["url"]).status_code == 200
+    assert stored["backgrounds"]["dashboard"]["kind"] == "video"
+    assert (
+        client.get("/api/preferences").json()["backgrounds"]["dashboard"]["media_id"] == video["id"]
+    )
