@@ -7,20 +7,30 @@ import { confirmAction, formModal } from '../core/modal.js';
 import { currentRoute, setHeader } from '../core/router.js';
 import { loadMedia, loadPreferences, mediaOfKind, savePreferences, state } from '../core/state.js';
 import {
+  CUSTOM,
   THEMES,
-  accentOverride,
+  TOKEN_GROUPS,
   activeTheme,
   applyAppearance,
-  effectiveAccent,
+  currentPalette,
+  customTheme,
   swatch,
   themeHint,
   themeTitle,
+  toHex,
+  toTriplet,
 } from '../core/themes.js';
 import { onSound, previewUrl, soundPlaying, stopSound } from '../core/audio.js';
 import { musicVolume, setMusicVolume } from '../core/player.js';
 import { toast } from '../core/toast.js';
 
-const LOOK_KEYS = ['theme.palette', 'theme.accent', 'theme.font_heading', 'theme.font_body'];
+const LOOK_KEYS = [
+  'theme.palette',
+  'theme.accent',
+  'theme.custom',
+  'theme.font_heading',
+  'theme.font_body',
+];
 
 const PAGE_NAMES = [
   'default',
@@ -195,7 +205,7 @@ function soundBlock(container) {
     soundSelect('audio.reminder_sound_id', t('set.reminderSound')),
     el(
       'div',
-      { style: { alignSelf: 'end' } },
+      { class: 'row beside-fields' },
       el('button', {
         class: 'btn',
         text: t('set.uploadSound'),
@@ -239,19 +249,25 @@ function languageBlock() {
 function themesBlock(container) {
   const current = activeTheme();
 
+  const pick = async (theme) => {
+    const values =
+      theme.name === CUSTOM
+        ? { 'theme.palette': CUSTOM, 'theme.custom': theme.palette, 'theme.accent': '' }
+        : { 'theme.palette': theme.name, 'theme.accent': '' };
+    await savePreferences(values);
+    applyAppearance();
+    renderSettings(container);
+  };
+
   return el(
     'div',
     { class: 'grid', style: { gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' } },
-    THEMES.map((theme) =>
+    THEMES.concat([customTheme()]).map((theme) =>
       el(
         'button',
         {
           class: `theme-card${theme.name === current.name ? ' on' : ''}`,
-          onclick: async () => {
-            await savePreferences({ 'theme.palette': theme.name, 'theme.accent': '' });
-            applyAppearance();
-            renderSettings(container);
-          },
+          onclick: () => pick(theme),
         },
         swatch(theme),
         el('strong', { text: themeTitle(theme) }),
@@ -262,16 +278,36 @@ function themesBlock(container) {
 }
 
 function lookBlock(container) {
-  const accent = el('input', {
-    type: 'color',
-    value: effectiveAccent(),
-    style: { width: '100%', height: '38px', padding: '2px', background: 'var(--sunken)' },
-  });
-  accent.onchange = async () => {
-    await savePreferences({ 'theme.accent': accent.value });
-    applyAppearance();
-    renderSettings(container);
+  const palette = currentPalette();
+
+  const colourField = (token) => {
+    const well = el('input', { type: 'color', class: 'color-well', value: toHex(palette[token]) });
+    well.onchange = async () => {
+      await savePreferences({
+        'theme.palette': CUSTOM,
+        'theme.custom': { ...palette, [token]: toTriplet(well.value) },
+        'theme.accent': '',
+      });
+      applyAppearance();
+      renderSettings(container);
+    };
+    return field(t(`token.${token}`), well);
   };
+
+  const colourCard = (group) =>
+    el(
+      'div',
+      { class: 'card' },
+      el('div', { class: 'card-title', text: t(`set.colours.${group.name}`) }),
+      el(
+        'div',
+        {
+          class: 'grid',
+          style: { gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', marginTop: '12px' },
+        },
+        group.tokens.map(colourField)
+      )
+    );
 
   const fontSelect = (key, label) => {
     const fonts = mediaOfKind('font');
@@ -297,39 +333,31 @@ function lookBlock(container) {
 
   return el(
     'div',
-    { class: 'card grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' } },
-    field(
-      t('set.accent'),
-      accent,
-      accentOverride()
-        ? t('set.accentOwn')
-        : t('set.accentTheme', { name: themeTitle(activeTheme()) })
-    ),
-    fontSelect('theme.font_heading', t('set.fontHeading')),
-    fontSelect('theme.font_body', t('set.fontBody')),
+    { class: 'stack' },
     el(
       'div',
-      { class: 'row', style: { alignSelf: 'end' } },
-      el('button', {
-        class: 'btn',
-        text: t('set.themeColor'),
-        disabled: !accentOverride(),
-        onclick: async () => {
-          await savePreferences({ 'theme.accent': '' });
-          applyAppearance();
-          renderSettings(container);
-        },
-      }),
-      el('button', {
-        class: 'btn ghost',
-        text: t('set.resetLook'),
-        onclick: async () => {
-          await api.resetPreferences(LOOK_KEYS);
-          await loadPreferences(true);
-          applyAppearance();
-          renderSettings(container);
-        },
-      })
+      { class: 'grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' } },
+      TOKEN_GROUPS.map(colourCard)
+    ),
+    el(
+      'div',
+      { class: 'card grid', style: { gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' } },
+      fontSelect('theme.font_heading', t('set.fontHeading')),
+      fontSelect('theme.font_body', t('set.fontBody')),
+      el(
+        'div',
+        { class: 'row beside-fields' },
+        el('button', {
+          class: 'btn ghost',
+          text: t('set.resetLook'),
+          onclick: async () => {
+            await api.resetPreferences(LOOK_KEYS);
+            await loadPreferences(true);
+            applyAppearance();
+            renderSettings(container);
+          },
+        })
+      )
     )
   );
 }

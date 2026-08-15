@@ -190,6 +190,10 @@
   min-width: 0;
 }
 
+.row.beside-fields {
+  align-self: center;
+}
+
 .row.between {
   justify-content: space-between;
   flex-wrap: wrap;

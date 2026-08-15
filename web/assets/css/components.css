@@ -64,6 +64,16 @@
   border-top: 1px solid var(--line-soft);
 }
 
+.color-well {
+  width: 100%;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--sunken);
+  cursor: pointer;
+}
+
 .background-preview {
   display: block;
   width: 100%;

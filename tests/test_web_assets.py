@@ -19,6 +19,10 @@ TRANSLATION_CALL = re.compile(r"(?<![\w.])t\(\s*'([^']+)'")
 ROUTE_LINE = re.compile(r"name:\s*'([^']+)',\s*title:.*?icon:\s*'([^']+)'")
 ASSET_REFERENCE = re.compile(r"/presets/(icons|glyphs|backgrounds)/([\w.-]+\.svg)")
 COLLECTION_LINE = re.compile(r"COLLECTION_KEYS = \[([^\]]+)\]")
+TOKEN_GROUP = re.compile(r"\{ name: '(\w+)', tokens: \[([^\]]+)\] \}")
+PALETTE_BLOCK = re.compile(r"palette: \{(.*?)\n    \}", re.S)
+PALETTE_KEY = re.compile(r"^\s+'?([\w-]+)'?:", re.M)
+CSS_TOKEN = re.compile(r"^  --([\w-]+)-rgb:", re.M)
 
 
 def read(path: Path) -> str:
@@ -65,7 +69,16 @@ def test_every_asked_word_exists():
 def test_the_catalogue_carries_no_dead_weight():
     russian, _ = catalogues()
     sources = "\n".join(read(script) for script in SCRIPTS if script.name != "i18n.js")
-    families = ("kind.", "cadence.", "state.", "collection.", "nav.", "theme.")
+    families = (
+        "kind.",
+        "cadence.",
+        "state.",
+        "collection.",
+        "nav.",
+        "theme.",
+        "token.",
+        "set.colours.",
+    )
 
     unused = {key for key in russian if not key.startswith(families) and f"'{key}'" not in sources}
 
@@ -162,3 +175,49 @@ def test_media_kinds_have_a_home():
     from valhalla.media_paths import KIND_DIRECTORIES
 
     assert set(KIND_DIRECTORIES) == set(MediaKind)
+
+
+def theme_groups():
+    source = read(WEB / "assets" / "js" / "core" / "themes.js")
+    return [
+        (name, re.findall(r"'([\w-]+)'", tokens)) for name, tokens in TOKEN_GROUP.findall(source)
+    ]
+
+
+def test_the_look_editor_names_every_colour():
+    russian, english = catalogues()
+    groups = theme_groups()
+
+    assert groups
+    for group, tokens in groups:
+        assert f"set.colours.{group}" in russian
+        assert f"set.colours.{group}" in english
+        for token in tokens:
+            assert f"token.{token}" in russian, token
+            assert f"token.{token}" in english, token
+
+
+def test_the_editor_covers_exactly_the_style_tokens():
+    tokens = {token for _, group in theme_groups() for token in group}
+    declared = set(CSS_TOKEN.findall(read(WEB / "assets" / "css" / "theme.css")))
+
+    assert tokens == declared
+
+
+def test_every_theme_paints_every_token():
+    tokens = {token for _, group in theme_groups() for token in group}
+    source = read(WEB / "assets" / "js" / "core" / "themes.js")
+
+    palettes = [set(PALETTE_KEY.findall(block)) for block in PALETTE_BLOCK.findall(source)]
+
+    assert len(palettes) >= 8
+    for palette in palettes:
+        assert palette == tokens
+
+
+def test_the_own_theme_has_a_name():
+    russian, english = catalogues()
+
+    for key in ("theme.custom", "theme.customHint"):
+        assert key in russian
+        assert key in english

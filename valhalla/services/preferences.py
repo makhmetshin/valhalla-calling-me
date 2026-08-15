@@ -11,6 +11,7 @@ DEFAULTS: dict[str, Any] = {
     "ui.language": "ru",
     "theme.palette": "",
     "theme.accent": "",
+    "theme.custom": {},
     "theme.font_heading": "",
     "theme.font_body": "",
     "audio.master_volume": 0.7,

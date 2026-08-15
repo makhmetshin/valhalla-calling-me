@@ -151,6 +151,16 @@ export const THEMES = [
 
 const ACCENT_TINT = 0.38;
 
+export const CUSTOM = 'custom';
+
+export const TOKEN_GROUPS = [
+  { name: 'ground', tokens: ['abyss', 'deep', 'panel', 'sunken', 'shade'] },
+  { name: 'lines', tokens: ['line', 'ink', 'ink-strong', 'muted', 'steel'] },
+  { name: 'accents', tokens: ['accent', 'accent-soft', 'danger'] },
+];
+
+export const TOKENS = TOKEN_GROUPS.flatMap((group) => group.tokens);
+
 export function themeTitle(theme) {
   return t(`theme.${theme.name}`);
 }
@@ -163,8 +173,17 @@ export function themeByName(name) {
   return THEMES.find((theme) => theme.name === name) || THEMES[0];
 }
 
+export function customTheme() {
+  const stored = state.preferences['theme.custom'] || {};
+  return { name: CUSTOM, palette: { ...THEMES[0].palette, ...stored } };
+}
+
+export function isCustom() {
+  return state.preferences['theme.palette'] === CUSTOM;
+}
+
 export function activeTheme() {
-  return themeByName(state.preferences['theme.palette']);
+  return isCustom() ? customTheme() : themeByName(state.preferences['theme.palette']);
 }
 
 export function accentOverride() {
@@ -172,8 +191,8 @@ export function accentOverride() {
   return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : '';
 }
 
-export function effectiveAccent() {
-  return accentOverride() || toHex(activeTheme().palette.accent);
+export function currentPalette() {
+  return paletteOf(activeTheme(), isCustom() ? '' : accentOverride());
 }
 
 export function paletteOf(theme, accent = '') {
@@ -201,7 +220,7 @@ export function swatch(theme) {
 export function applyAppearance() {
   const heading = state.preferences['theme.font_heading'];
   const body = state.preferences['theme.font_body'];
-  const palette = paletteOf(activeTheme(), accentOverride());
+  const palette = currentPalette();
   const style = document.getElementById('userTheme') || el('style', { id: 'userTheme' });
   const rules = [];
 
@@ -221,13 +240,13 @@ export function applyAppearance() {
   if (!style.isConnected) document.head.append(style);
 }
 
-function toHex(triplet) {
+export function toHex(triplet) {
   return `#${channels(triplet)
     .map((channel) => channel.toString(16).padStart(2, '0'))
     .join('')}`;
 }
 
-function toTriplet(hex) {
+export function toTriplet(hex) {
   const value = hex.slice(1);
   return [0, 2, 4].map((offset) => parseInt(value.slice(offset, offset + 2), 16)).join(' ');
 }
