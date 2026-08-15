@@ -259,7 +259,7 @@ const RU = {
   'rem.accept': 'Принято',
   'rem.snooze': 'Позже',
 
-  'codex.subtitleEmpty': 'Твой бестиарий и летопись',
+  'codex.subtitleEmpty': 'Твои бестиарий и гримуар',
   'codex.subtitle': 'Главы, страницы, наблюдения',
   'codex.firstChapter': 'Первая глава',
   'codex.emptyTitle': 'Кодекс пуст',
@@ -779,7 +779,7 @@ const EN = {
   'rem.accept': 'Accepted',
   'rem.snooze': 'Later',
 
-  'codex.subtitleEmpty': 'Your bestiary and chronicle',
+  'codex.subtitleEmpty': 'Thy Bestiary and Grimoire',
   'codex.subtitle': 'Chapters, pages, observations',
   'codex.firstChapter': 'First chapter',
   'codex.emptyTitle': 'The codex is empty',
@@ -1057,6 +1057,12 @@ export function language() {
 export function locale() {
   const found = LANGUAGES.find((item) => item.code === language());
   return found ? found.locale : LANGUAGES[0].locale;
+}
+
+export function greetings() {
+  return Object.keys(RU)
+    .filter((key) => key.startsWith('dash.greeting'))
+    .map((key) => t(key));
 }
 
 export function t(key, vars) {

@@ -1,7 +1,7 @@
 @echo off
-cd /d "%~dp0"
+cd /d "%~dp0.."
 if not exist ".venv\Scripts\pythonw.exe" (
-    echo Окружение не найдено. Сначала запусти setup.bat
+    echo Окружение не найдено. Сначала запусти scripts\setup.bat
     pause
     exit /b 1
 )

@@ -1,24 +1,17 @@
 import { api } from '../core/api.js';
 import { el, iconPlate, mount } from '../core/dom.js';
 import { formatDate, formatDateTime, formatNumber, minutesToHuman } from '../core/format.js';
-import { t } from '../core/i18n.js';
+import { greetings, t } from '../core/i18n.js';
 import { entityLink, openEntity } from '../core/navigation.js';
 import { navigate, setHeader } from '../core/router.js';
 import { loadMedia } from '../core/state.js';
 import { celebrateAll } from '../core/toast.js';
 
-const GREETINGS = [
-  t('dash.greeting1'),
-  t('dash.greeting2'),
-  t('dash.greeting3'),
-  t('dash.greeting4'),
-  t('dash.greeting5'),
-];
-
 export async function renderDashboard(container) {
   await loadMedia();
   const overview = await api.overview();
-  const greeting = GREETINGS[new Date().getDate() % GREETINGS.length];
+  const sayings = greetings();
+  const greeting = sayings[new Date().getDate() % sayings.length];
 
   setHeader(t('nav.dashboard'), greeting, [
     el('button', { class: 'btn', text: t('dash.toPlan'), onclick: () => navigate('plan') }),
