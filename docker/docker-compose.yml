@@ -1,0 +1,11 @@
+name: valhalla-calling-me
+
+services:
+  valhalla:
+    image: marat2013/valhalla-calling-me:latest
+    container_name: valhalla-calling-me
+    restart: unless-stopped
+    ports:
+      - "${VALHALLA_HOST_PORT:-8777}:8777"
+    volumes:
+      - ${VALHALLA_VAULT:-./vault}:/vault
