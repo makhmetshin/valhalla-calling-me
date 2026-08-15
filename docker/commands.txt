@@ -1,0 +1,2 @@
+docker build -f docker/Dockerfile -t marat2013/valhalla-calling-me:latest .
+docker push marat2013/valhalla-calling-me:latest

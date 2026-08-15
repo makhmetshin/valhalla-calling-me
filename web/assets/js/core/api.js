@@ -123,8 +123,7 @@ export const api = {
   playlists: () => get('/music/playlists'),
   createPlaylist: (payload) => post('/music/playlists', payload),
   updatePlaylist: (id, payload) => patch(`/music/playlists/${id}`, payload),
-  deletePlaylist: (id, withFiles = false) =>
-    remove(`/music/playlists/${id}?with_files=${withFiles}`),
+  deletePlaylist: (id) => remove(`/music/playlists/${id}?with_files=true`),
   reorderPlaylists: (ids) => post('/music/playlists/order', { ids }),
 
   tracks: (playlistId) =>
@@ -138,7 +137,7 @@ export const api = {
     return request('POST', '/music/tracks/upload', form);
   },
   updateTrack: (id, payload) => patch(`/music/tracks/${id}`, payload),
-  deleteTrack: (id, withFile = false) => remove(`/music/tracks/${id}?with_file=${withFile}`),
+  deleteTrack: (id) => remove(`/music/tracks/${id}?with_file=true`),
   reorderTracks: (ids) => post('/music/tracks/order', { ids }),
   trackPlayed: (id) => post(`/music/tracks/${id}/played`),
 

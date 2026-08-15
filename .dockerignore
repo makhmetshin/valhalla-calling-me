@@ -1,0 +1,14 @@
+.*/
+.*
+__pycache__
+**/__pycache__
+*.py[cod]
+vault
+screens
+tests
+tools
+requirements-dev.txt
+setup.bat
+start.bat
+run.py
+README.md

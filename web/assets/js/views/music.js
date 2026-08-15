@@ -3,7 +3,7 @@ import { el, emptyState, mount } from '../core/dom.js';
 import { formatBytes, formatDateTime } from '../core/format.js';
 import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
-import { closeModal, formModal, openModal } from '../core/modal.js';
+import { confirmAction, formModal } from '../core/modal.js';
 import { anchor, focusEntity } from '../core/navigation.js';
 import {
   activePlaylistId,
@@ -240,35 +240,19 @@ function playlistForm(album, onDone) {
   });
 }
 
-function removePlaylist(album, onDone) {
-  const drop = async (withFiles) => {
-    closeModal();
-    try {
-      await api.deletePlaylist(album.id, withFiles);
-      await onDone();
-    } catch (error) {
-      toast(t('music.removeFailed'), error.message, { tone: 'warn' });
-    }
-  };
-
-  openModal({
+async function removePlaylist(album, onDone) {
+  const yes = await confirmAction({
     title: t('music.deletePlaylistTitle'),
-    subtitle: album.name,
-    content: [el('p', { class: 'muted', text: t('music.deletePlaylistText') })],
-    actions: [
-      el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
-      el('button', {
-        class: 'btn ghost danger',
-        text: t('music.removeWithFiles'),
-        onclick: () => drop(true),
-      }),
-      el('button', {
-        class: 'btn primary',
-        text: t('music.removeKeepFiles'),
-        onclick: () => drop(false),
-      }),
-    ],
+    message: t('music.deletePlaylistText', { name: album.name }),
   });
+  if (!yes) return;
+
+  try {
+    await api.deletePlaylist(album.id);
+    await onDone();
+  } catch (error) {
+    toast(t('music.removeFailed'), error.message, { tone: 'warn' });
+  }
 }
 
 function trackForm(track, onDone) {
@@ -286,35 +270,19 @@ function trackForm(track, onDone) {
   });
 }
 
-function removeTrack(track, onDone) {
-  const drop = async (withFile) => {
-    closeModal();
-    try {
-      await api.deleteTrack(track.id, withFile);
-      await onDone();
-    } catch (error) {
-      toast(t('music.removeFailed'), error.message, { tone: 'warn' });
-    }
-  };
-
-  openModal({
+async function removeTrack(track, onDone) {
+  const yes = await confirmAction({
     title: t('music.removeTitle'),
-    subtitle: track.title,
-    content: [el('p', { class: 'muted', text: t('music.removeHint') })],
-    actions: [
-      el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: closeModal }),
-      el('button', {
-        class: 'btn ghost danger',
-        text: t('music.removeWithFile'),
-        onclick: () => drop(true),
-      }),
-      el('button', {
-        class: 'btn primary',
-        text: t('music.removeFromList'),
-        onclick: () => drop(false),
-      }),
-    ],
+    message: t('music.removeText', { name: track.title }),
   });
+  if (!yes) return;
+
+  try {
+    await api.deleteTrack(track.id);
+    await onDone();
+  } catch (error) {
+    toast(t('music.removeFailed'), error.message, { tone: 'warn' });
+  }
 }
 
 function upload(playlistId, onDone) {
