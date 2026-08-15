@@ -78,6 +78,7 @@ def test_the_catalogue_carries_no_dead_weight():
         "theme.",
         "token.",
         "set.colours.",
+        "dash.greeting",
     )
 
     unused = {key for key in russian if not key.startswith(families) and f"'{key}'" not in sources}
@@ -213,6 +214,42 @@ def test_every_theme_paints_every_token():
     assert len(palettes) >= 8
     for palette in palettes:
         assert palette == tokens
+
+
+def test_the_hall_greets_in_both_tongues():
+    russian, english = catalogues()
+    sayings = [key for key in russian if key.startswith("dash.greeting")]
+
+    assert len(sayings) >= 5
+    for key in sayings:
+        assert key in english
+
+
+def test_the_sayings_are_picked_when_the_page_is_drawn():
+    source = read(WEB / "assets" / "js" / "views" / "dashboard.js")
+    head = source.split("export async function")[0]
+
+    assert "greetings()" in source
+    assert "t(" not in head
+
+
+def test_a_window_closes_only_by_its_own_buttons():
+    source = read(WEB / "assets" / "js" / "core" / "modal.js")
+
+    assert "root.onclick" not in source
+    assert "onDismiss" not in source
+
+
+def test_every_window_carries_a_way_out():
+    opened = 0
+
+    for script in SCRIPTS:
+        source = read(script)
+        for block in re.findall(r"openModal\(\{(.*?)\n  \}\)", source, re.S):
+            opened += 1
+            assert "actions:" in block, script.name
+
+    assert opened >= 4
 
 
 def test_the_own_theme_has_a_name():

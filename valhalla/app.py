@@ -12,7 +12,6 @@ from fastapi.staticfiles import StaticFiles
 from valhalla import __version__
 from valhalla.api import api_router
 from valhalla.config import get_settings
-from valhalla.db.seed import seed_all
 from valhalla.db.session import init_database, session_scope
 from valhalla.media_paths import PRESET_MOUNT, VAULT_MOUNT
 from valhalla.services.errors import DomainError
@@ -30,7 +29,6 @@ def bootstrap() -> None:
         sync_presets(session)
         scan_vault(session)
         sync_playlists(session)
-        seed_all(session)
 
 
 @asynccontextmanager

@@ -11,12 +11,12 @@ def test_the_hall_reports_itself(client):
     assert overview["due_reminders"] >= 0
 
 
-def test_the_codex_arrives_seeded(client):
-    outline = client.get("/api/codex/outline").json()
-
-    assert outline
-    assert all(chapter["title"] for chapter in outline)
-    assert any(chapter["entries"] for chapter in outline)
+def test_the_hall_starts_empty(client):
+    assert client.get("/api/codex/outline").json() == []
+    assert client.get("/api/achievements/groups").json() == []
+    assert client.get("/api/achievements").json() == []
+    assert client.get("/api/metrics").json() == []
+    assert client.get("/api/tasks").json() == []
 
 
 def test_a_chapter_and_a_page_can_be_written(client):

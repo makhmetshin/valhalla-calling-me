@@ -14,7 +14,7 @@ export function closeModal() {
   clear(root);
 }
 
-export function openModal({ title, subtitle, content, actions, width, onDismiss }) {
+export function openModal({ title, subtitle, content, actions, width }) {
   const body = el('div', { class: 'modal-body' });
   const modal = el(
     'div',
@@ -32,20 +32,13 @@ export function openModal({ title, subtitle, content, actions, width, onDismiss 
   mount(body, content);
   mount(root, modal);
   root.classList.add('open');
-  root.onclick = (event) => {
-    if (event.target !== root) return;
-    closeModal();
-    if (onDismiss) onDismiss();
-  };
   return { modal, body };
 }
 
 export function confirmAction({ title, message, confirmLabel, hint }) {
   return new Promise((resolve) => {
-    let settled = false;
-    const finish = (value) => {
-      if (settled) return;
-      settled = true;
+    const answer = (value) => () => {
+      closeModal();
       resolve(value);
     };
 
@@ -53,23 +46,12 @@ export function confirmAction({ title, message, confirmLabel, hint }) {
       title,
       subtitle: hint,
       content: [el('p', { text: message })],
-      onDismiss: () => finish(false),
       actions: [
-        el('button', {
-          class: 'btn ghost',
-          text: t('common.cancel'),
-          onclick: () => {
-            closeModal();
-            finish(false);
-          },
-        }),
+        el('button', { class: 'btn ghost', text: t('common.cancel'), onclick: answer(false) }),
         el('button', {
           class: 'btn danger',
           text: confirmLabel || t('common.delete'),
-          onclick: () => {
-            closeModal();
-            finish(true);
-          },
+          onclick: answer(true),
         }),
       ],
     });

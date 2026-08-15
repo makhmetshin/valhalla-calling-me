@@ -8,7 +8,6 @@ screens
 tests
 tools
 requirements-dev.txt
-setup.bat
-start.bat
+scripts
 run.py
 README.md
