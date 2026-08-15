@@ -78,8 +78,8 @@ chmod +x scripts/*.sh
 
 The first run takes a couple of minutes — libraries are installed and icons are drawn. After that only `start`.
 
-#### Running with Docker (docker must already be installed)
-
+#### Running with Docker  
+Docker must already be installed  
 This is the simplest way and the least prone to errors, because the whole environment is prepared already.
 The difference is that the app runs in your browser.
 
@@ -116,3 +116,6 @@ will show up. The same thing happens by itself on every start.
 It understands the usual formats: `png`, `jpg`, `webp`, `svg` for pictures, `mp3`, `wav`, `ogg`, `flac`,
 `m4a` for sound, `mp4` and `webm` for video, `ttf`, `otf`, `woff2` for fonts. The name is taken from
 the file name
+
+
+## Shield and spear at the ready!
