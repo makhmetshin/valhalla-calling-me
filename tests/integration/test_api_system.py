@@ -121,3 +121,44 @@ def test_a_video_can_be_kept_as_a_background(client, settings):
     assert (
         client.get("/api/preferences").json()["backgrounds"]["dashboard"]["media_id"] == video["id"]
     )
+
+
+def test_an_own_theme_is_kept_and_can_be_given_up(client):
+    palette = {"accent": "12 34 56", "ink": "200 214 229"}
+
+    stored = client.put(
+        "/api/preferences",
+        json={"values": {"theme.palette": "custom", "theme.custom": palette}},
+    ).json()
+
+    assert stored["theme.palette"] == "custom"
+    assert stored["theme.custom"] == palette
+    assert client.get("/api/preferences").json()["theme.custom"]["accent"] == "12 34 56"
+
+    reset = client.post("/api/preferences/reset?keys=theme.palette&keys=theme.custom").json()
+
+    assert reset["theme.palette"] == ""
+    assert reset["theme.custom"] == {}
+
+
+def test_the_look_reset_spares_the_rest(client):
+    client.put(
+        "/api/preferences",
+        json={
+            "values": {
+                "theme.palette": "custom",
+                "theme.custom": {"accent": "12 34 56"},
+                "ui.language": "en",
+                "player.volume": 0.25,
+            }
+        },
+    )
+
+    left = client.post(
+        "/api/preferences/reset?keys=theme.palette&keys=theme.custom&keys=theme.accent"
+    ).json()
+
+    assert left["theme.palette"] == ""
+    assert left["theme.custom"] == {}
+    assert left["ui.language"] == "en"
+    assert left["player.volume"] == 0.25
