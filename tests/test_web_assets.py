@@ -233,6 +233,13 @@ def test_the_sayings_are_picked_when_the_page_is_drawn():
     assert "t(" not in head
 
 
+def test_the_codex_gives_up_only_when_it_has_no_chapters():
+    source = read(WEB / "assets" / "js" / "views" / "codex.js")
+
+    assert "if (!outline.length) {" in source
+    assert "if (!order.length) {" not in source
+
+
 def test_a_window_closes_only_by_its_own_buttons():
     source = read(WEB / "assets" / "js" / "core" / "modal.js")
 

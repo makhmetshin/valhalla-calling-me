@@ -1,5 +1,5 @@
 import { api } from '../core/api.js';
-import { clear, el, mount } from '../core/dom.js';
+import { clear, el, emptyState, mount } from '../core/dom.js';
 import { formatDateTime, renderProse } from '../core/format.js';
 import { language, t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
@@ -18,19 +18,18 @@ export async function renderCodex(container, params = {}) {
   const order = flatten(outline);
   const focus = focusTarget(params);
 
-  if (!order.length) {
+  if (!outline.length) {
     setHeader(t('nav.codex'), t('codex.subtitleEmpty'), [
       el('button', { class: 'btn primary', text: t('codex.firstChapter'), onclick: () => chapterForm(null, outline, () => renderCodex(container)) }),
     ]);
-    mount(
-      container,
-      el('div', { class: 'empty' }, el('h3', { text: t('codex.emptyTitle') }), el('p', { text: t('codex.emptyHint') }))
-    );
+    mount(container, emptyState(t('codex.emptyTitle'), t('codex.emptyHint')));
     return;
   }
 
-  let currentId = entryFor(focus, order) || params.entryId || lastEntryId || order[0].id;
-  if (!order.some((item) => item.id === currentId)) currentId = order[0].id;
+  let currentId = order.length
+    ? entryFor(focus, order) || params.entryId || lastEntryId || order[0].id
+    : null;
+  if (order.length && !order.some((item) => item.id === currentId)) currentId = order[0].id;
 
   const nav = el('aside', { class: 'codex-nav' });
   const book = el('div', { class: 'book' });
@@ -46,7 +45,7 @@ export async function renderCodex(container, params = {}) {
     el('button', {
       class: 'btn primary',
       text: t('codex.newEntry'),
-      onclick: () => entryForm(null, order, outline, (entry) => renderCodex(container, { entryId: entry.id })),
+      onclick: () => entryForm(null, outline, (entry) => renderCodex(container, { entryId: entry.id })),
     }),
   ]);
 
@@ -107,7 +106,7 @@ export async function renderCodex(container, params = {}) {
           title: t('codex.addEntry'),
           onclick: (event) => {
             event.stopPropagation();
-            entryForm({ chapter_id: chapter.id }, order, outline, (entry) =>
+            entryForm({ chapter_id: chapter.id }, outline, (entry) =>
               renderCodex(container, { entryId: entry.id })
             );
           },
@@ -160,6 +159,23 @@ export async function renderCodex(container, params = {}) {
   }
 
   async function drawPage(direction = 0) {
+    if (currentId === null) {
+      mount(
+        book,
+        emptyState(
+          t('codex.noPagesTitle'),
+          t('codex.noPagesHint'),
+          el('button', {
+            class: 'btn primary',
+            style: { marginTop: '14px' },
+            text: t('codex.newEntry'),
+            onclick: () => entryForm(null, outline, (saved) => renderCodex(container, { entryId: saved.id })),
+          })
+        )
+      );
+      return;
+    }
+
     const entry = await api.entry(currentId);
     const index = order.findIndex((item) => item.id === currentId);
     const chapterTitle = order[index] ? order[index].chapterTitle : '';
@@ -192,7 +208,7 @@ export async function renderCodex(container, params = {}) {
           el('button', {
             class: 'btn sm',
             text: t('common.edit'),
-            onclick: () => entryForm(entry, order, outline, () => renderCodex(container, { entryId: entry.id })),
+            onclick: () => entryForm(entry, outline, () => renderCodex(container, { entryId: entry.id })),
           }),
           el('button', {
             class: 'btn sm ghost danger',
@@ -367,7 +383,7 @@ function chapterForm(chapter, outline, onDone) {
   });
 }
 
-function entryForm(entry, order, outline, onDone) {
+function entryForm(entry, outline, onDone) {
   const isNew = !entry || !entry.id;
   formModal({
     title: isNew ? t('codex.newEntry') : t('codex.entryForm'),
