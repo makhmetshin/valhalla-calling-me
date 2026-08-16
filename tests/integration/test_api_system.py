@@ -19,6 +19,15 @@ def test_the_hall_starts_empty(client):
     assert client.get("/api/tasks").json() == []
 
 
+def test_a_chapter_without_pages_still_stands_in_the_outline(client):
+    client.post("/api/codex/chapters", json={"title": "Пустая глава"})
+
+    outline = client.get("/api/codex/outline").json()
+
+    assert [chapter["title"] for chapter in outline] == ["Пустая глава"]
+    assert outline[0]["entries"] == []
+
+
 def test_a_chapter_and_a_page_can_be_written(client):
     chapter = client.post("/api/codex/chapters", json={"title": "Мой путь"}).json()
     entry = client.post(
