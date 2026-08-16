@@ -1,4 +1,5 @@
 import { api } from '../core/api.js';
+import { basisField } from '../core/basis.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatNumber, taskStateLabel } from '../core/format.js';
 import { t } from '../core/i18n.js';
@@ -25,7 +26,7 @@ export async function renderTasks(container, params = {}) {
     el('button', {
       class: 'btn primary',
       text: t('task.newOne'),
-      onclick: () => taskForm(null, achievements, metrics, () => renderTasks(container)),
+      onclick: () => taskForm(null, achievements, metrics, () => renderTasks(container), tasks),
     }),
   ]);
 
@@ -39,7 +40,7 @@ export async function renderTasks(container, params = {}) {
           class: 'btn primary',
           style: { marginTop: '14px' },
           text: t('task.create'),
-          onclick: () => taskForm(null, achievements, metrics, () => renderTasks(container)),
+          onclick: () => taskForm(null, achievements, metrics, () => renderTasks(container), tasks),
         })
       )
     );
@@ -136,10 +137,16 @@ function row(task, achievements, metrics, container) {
   );
 }
 
-export function taskForm(task, achievements, metrics, onDone) {
+export function taskForm(task, achievements, metrics, onDone, samples = []) {
+  const editing = Boolean(task?.id);
   formModal({
-    title: task ? t('task.formEdit') : t('task.newOne'),
+    title: editing ? t('task.formEdit') : t('task.newOne'),
     fields: [
+      editing
+        ? null
+        : basisField(samples, task?.basis, (draft) =>
+            taskForm(draft, achievements, metrics, onDone, samples)
+          ),
       { name: 'title', label: t('task.what'), value: task?.title || '' },
       { name: 'notes', label: t('task.notes'), type: 'textarea', rows: 3, value: task?.notes || '' },
       {
@@ -180,7 +187,7 @@ export function taskForm(task, achievements, metrics, onDone) {
     onSubmit: async (values) => {
       if (!values.title.trim()) throw new Error(t('common.titleRequired'));
       const payload = { ...values, metric_delta: values.metric_delta ?? 0, units: values.units || 1 };
-      if (task) await api.updateTask(task.id, payload);
+      if (editing) await api.updateTask(task.id, payload);
       else await api.createTask(payload);
       toast(t('common.saved'), payload.title);
       await onDone();

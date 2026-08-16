@@ -62,7 +62,7 @@ export function formModal({ title, subtitle, fields, submitLabel, onSubmit }) {
   const controls = new Map();
   const nodes = fields.filter(Boolean).map((field) => {
     const control = buildControl(field);
-    controls.set(field.name, control);
+    if (!field.transient) controls.set(field.name, control);
     return control.node;
   });
 
@@ -140,7 +140,7 @@ function buildControl(field) {
           })
         )
       );
-      return {
+      const control = {
         node: labelled(field, select),
         read: () => {
           const raw = select.value;
@@ -149,6 +149,8 @@ function buildControl(field) {
           return match ? match.value : raw;
         },
       };
+      if (field.onChange) select.onchange = () => field.onChange(control.read());
+      return control;
     }
     case 'checkbox': {
       const input = el('input', { type: 'checkbox', checked: Boolean(field.value) });

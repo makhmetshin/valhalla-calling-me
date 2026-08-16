@@ -1,4 +1,5 @@
 import { api } from '../core/api.js';
+import { basisField } from '../core/basis.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { CADENCE_KEYS, cadenceLabel, formatDateTime, toIsoLocal } from '../core/format.js';
 import { t } from '../core/i18n.js';
@@ -16,7 +17,7 @@ export async function renderReminders(container, params = {}) {
     el('button', {
       class: 'btn primary',
       text: t('rem.newOne'),
-      onclick: () => reminderForm(null, catalog, () => renderReminders(container)),
+      onclick: () => reminderForm(null, catalog, () => renderReminders(container), reminders),
     }),
   ]);
 
@@ -30,7 +31,7 @@ export async function renderReminders(container, params = {}) {
           class: 'btn primary',
           style: { marginTop: '14px' },
           text: t('rem.create'),
-          onclick: () => reminderForm(null, catalog, () => renderReminders(container)),
+          onclick: () => reminderForm(null, catalog, () => renderReminders(container), reminders),
         })
       )
     );
@@ -121,10 +122,16 @@ function card(reminder, catalog, container) {
   );
 }
 
-export function reminderForm(reminder, catalog, onDone) {
+export function reminderForm(reminder, catalog, onDone, samples = []) {
+  const editing = Boolean(reminder?.id);
   formModal({
-    title: reminder ? t('rem.formEdit') : t('rem.newOne'),
+    title: editing ? t('rem.formEdit') : t('rem.newOne'),
     fields: [
+      editing
+        ? null
+        : basisField(samples, reminder?.basis, (draft) =>
+            reminderForm(draft, catalog, onDone, samples)
+          ),
       { name: 'title', label: t('rem.heading'), value: reminder?.title || '' },
       { name: 'message', label: t('rem.text'), type: 'textarea', rows: 3, value: reminder?.message || '' },
       {
@@ -168,7 +175,7 @@ export function reminderForm(reminder, catalog, onDone) {
         icon_id: values.icon_id,
         is_active: values.is_active,
       };
-      if (reminder) await api.updateReminder(reminder.id, payload);
+      if (editing) await api.updateReminder(reminder.id, payload);
       else await api.createReminder(payload);
       toast(t('rem.savedToast'), payload.title);
       await onDone();

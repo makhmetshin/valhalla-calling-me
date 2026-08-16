@@ -1,4 +1,5 @@
 import { api } from '../core/api.js';
+import { basisField } from '../core/basis.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime, formatNumber } from '../core/format.js';
 import { t } from '../core/i18n.js';
@@ -17,7 +18,7 @@ export async function renderMetrics(container, params = {}) {
     el('button', {
       class: 'btn primary',
       text: t('metric.newOne'),
-      onclick: () => metricForm(null, () => renderMetrics(container)),
+      onclick: () => metricForm(null, () => renderMetrics(container), metrics),
     }),
   ]);
 
@@ -31,7 +32,7 @@ export async function renderMetrics(container, params = {}) {
           class: 'btn primary',
           style: { marginTop: '14px' },
           text: t('metric.create'),
-          onclick: () => metricForm(null, () => renderMetrics(container)),
+          onclick: () => metricForm(null, () => renderMetrics(container), metrics),
         })
       )
     );
@@ -170,14 +171,16 @@ async function historyModal(metric) {
   });
 }
 
-export function metricForm(metric, onDone) {
+export function metricForm(metric, onDone, samples = []) {
+  const editing = Boolean(metric?.id);
   formModal({
-    title: metric ? t('metric.formEdit') : t('metric.newOne'),
+    title: editing ? t('metric.formEdit') : t('metric.newOne'),
     fields: [
+      editing ? null : basisField(samples, metric?.basis, (draft) => metricForm(draft, onDone, samples)),
       { name: 'name', label: t('common.title'), value: metric?.name || '' },
       { name: 'description', label: t('common.description'), type: 'textarea', rows: 3, value: metric?.description || '' },
       { name: 'unit', label: t('metric.unit'), type: 'text', placeholder: t('metric.unitPlaceholder'), value: metric?.unit || '' },
-      !metric ? { name: 'value', label: t('metric.startValue'), type: 'number', value: 0 } : null,
+      editing ? null : { name: 'value', label: t('metric.startValue'), type: 'number', value: 0 },
       { name: 'step', label: t('metric.step'), type: 'number', value: metric?.step ?? 1 },
       {
         name: 'direction',
@@ -194,7 +197,7 @@ export function metricForm(metric, onDone) {
     ],
     onSubmit: async (values) => {
       if (!values.name.trim()) throw new Error(t('common.titleRequired'));
-      if (metric) await api.updateMetric(metric.id, values);
+      if (editing) await api.updateMetric(metric.id, values);
       else await api.createMetric(values);
       toast(t('metric.savedToast'), values.name);
       await onDone();

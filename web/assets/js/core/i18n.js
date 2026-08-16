@@ -42,6 +42,9 @@ const RU = {
   'common.dash': '—',
   'common.openThing': 'Открыть: {kind}',
   'common.goToIt': 'Перейти к нему',
+  'common.basedOn': 'По образцу',
+  'common.basedOnHelp': 'поля заполнятся как у выбранного — правь что нужно и сохраняй',
+  'common.fromScratch': '— с чистого листа —',
 
   'nav.dashboard': 'Чертог',
   'nav.achievements': 'Ачивки',
@@ -564,6 +567,9 @@ const EN = {
   'common.dash': '—',
   'common.openThing': 'Open: {kind}',
   'common.goToIt': 'Go to it',
+  'common.basedOn': 'After a pattern',
+  'common.basedOnHelp': 'the fields are filled in like the chosen one — change what you need and save',
+  'common.fromScratch': '— from a clean slate —',
 
   'nav.dashboard': 'Hall',
   'nav.achievements': 'Deeds',
