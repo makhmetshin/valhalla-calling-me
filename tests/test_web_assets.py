@@ -233,6 +233,20 @@ def test_the_sayings_are_picked_when_the_page_is_drawn():
     assert "t(" not in head
 
 
+def test_every_new_thing_can_follow_a_pattern():
+    for name in ("achievements.js", "metrics.js", "tasks.js", "reminders.js", "tablets.js"):
+        source = read(WEB / "assets" / "js" / "views" / name)
+        assert "basisField(" in source, name
+
+
+def test_the_pattern_picker_never_reaches_the_server():
+    basis = read(WEB / "assets" / "js" / "core" / "basis.js")
+    modal = read(WEB / "assets" / "js" / "core" / "modal.js")
+
+    assert "transient: true" in basis
+    assert "if (!field.transient) controls.set(field.name, control);" in modal
+
+
 def test_the_codex_gives_up_only_when_it_has_no_chapters():
     source = read(WEB / "assets" / "js" / "views" / "codex.js")
 

@@ -1,4 +1,5 @@
 import { api } from '../core/api.js';
+import { basisField } from '../core/basis.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime, formatNumber } from '../core/format.js';
 import { t } from '../core/i18n.js';
@@ -30,7 +31,7 @@ export async function renderAchievements(container, params = {}) {
       el('button', {
         class: 'btn primary',
         text: t('ach.newOne'),
-        onclick: () => achievementForm(null, groups, metrics, () => renderAchievements(container)),
+        onclick: () => achievementForm(null, groups, metrics, () => renderAchievements(container), achievements),
       }),
     ]
   );
@@ -45,7 +46,7 @@ export async function renderAchievements(container, params = {}) {
           class: 'btn primary',
           style: { marginTop: '14px' },
           text: t('ach.create'),
-          onclick: () => achievementForm(null, groups, metrics, () => renderAchievements(container)),
+          onclick: () => achievementForm(null, groups, metrics, () => renderAchievements(container), achievements),
         })
       )
     );
@@ -214,12 +215,17 @@ function card(achievement, groups, metrics, container) {
   );
 }
 
-export function achievementForm(achievement, groups, metrics, onDone) {
-  const editing = Boolean(achievement);
+export function achievementForm(achievement, groups, metrics, onDone, samples = []) {
+  const editing = Boolean(achievement?.id);
   formModal({
     title: editing ? t('ach.formEdit') : t('ach.newOne'),
     subtitle: t('ach.formSubtitle'),
     fields: [
+      editing
+        ? null
+        : basisField(samples, achievement?.basis, (draft) =>
+            achievementForm(draft, groups, metrics, onDone, samples)
+          ),
       { name: 'title', label: t('common.title'), value: achievement?.title || '' },
       {
         name: 'description',

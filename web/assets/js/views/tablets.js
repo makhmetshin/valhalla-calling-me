@@ -1,4 +1,5 @@
 import { api } from '../core/api.js';
+import { basisField } from '../core/basis.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
 import { formatDateTime } from '../core/format.js';
 import { language, t } from '../core/i18n.js';
@@ -500,11 +501,20 @@ export async function renderTablets(container, params = {}) {
     await reload({ kindId: kind.id });
   }
 
+  function ownColumns(draft) {
+    if (!draft) return null;
+    return { ...draft, columns: draft.columns.map((column) => ({ title: column.title })) };
+  }
+
   function kindForm(item, onDone) {
+    const editing = Boolean(item?.id);
     formModal({
-      title: item ? t('tab.kindForm') : t('tab.newKind'),
+      title: editing ? t('tab.kindForm') : t('tab.newKind'),
       subtitle: t('tab.columnsHint'),
       fields: [
+        editing
+          ? null
+          : basisField(kinds, item?.basis, (draft) => kindForm(ownColumns(draft), onDone)),
         { name: 'title', label: t('tab.kindTitle'), value: item?.title || '' },
         {
           name: 'summary',
@@ -531,7 +541,7 @@ export async function renderTablets(container, params = {}) {
       onSubmit: async (values) => {
         if (!values.title.trim()) throw new Error(t('common.titleRequired'));
         if (!values.columns.length) throw new Error(t('tab.columnsRequired'));
-        const saved = item
+        const saved = editing
           ? await api.updateTabletKind(item.id, values)
           : await api.createTabletKind(values);
         toast(t('tab.kindSaved'), saved.title);
