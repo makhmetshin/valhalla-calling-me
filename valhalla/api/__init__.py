@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from valhalla.api.routes import (
     achievements,
+    assessments,
     codex,
     export,
     links,
@@ -25,6 +26,7 @@ api_router.include_router(planning.router)
 api_router.include_router(reminders.router)
 api_router.include_router(codex.router)
 api_router.include_router(tablets.router)
+api_router.include_router(assessments.router)
 api_router.include_router(music.router)
 api_router.include_router(links.router)
 api_router.include_router(export.router)

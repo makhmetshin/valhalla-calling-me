@@ -10,6 +10,7 @@ import { loadMedia } from '../core/state.js';
 import { toast } from '../core/toast.js';
 
 let lastEntryId = null;
+const unfolded = new Set();
 
 export async function renderCodex(container, params = {}) {
   container.dispatchEvent(new CustomEvent('view:teardown'));
@@ -26,10 +27,14 @@ export async function renderCodex(container, params = {}) {
     return;
   }
 
-  let currentId = order.length
-    ? entryFor(focus, order) || params.entryId || lastEntryId || order[0].id
-    : null;
+  const shownBefore = lastEntryId;
+  const asked = entryFor(focus, order);
+  let currentId = order.length ? asked || params.entryId || lastEntryId || order[0].id : null;
   if (order.length && !order.some((item) => item.id === currentId)) currentId = order[0].id;
+
+  forget(unfolded, chapterIds(outline));
+  if (asked || (shownBefore !== null && currentId !== shownBefore)) unfold(outline, currentId);
+  lastEntryId = currentId;
 
   const nav = el('aside', { class: 'codex-nav' });
   const book = el('div', { class: 'book' });
@@ -75,76 +80,126 @@ export async function renderCodex(container, params = {}) {
   mount(nav, el('div', { class: 'nav-head' }, search), tree);
 
   function drawTree() {
-    mount(tree, outline.map((chapter) => chapterNode(chapter)));
+    mount(tree, outline.map((chapter, index) => chapterNode(chapter, outline, index)));
   }
 
-  function chapterNode(chapter) {
+  async function shift(siblings, index, step, send) {
+    const ids = siblings.map((item) => item.id);
+    const target = index + step;
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    await send(ids);
+    await renderCodex(container, { entryId: currentId });
+  }
+
+  function movers(siblings, index, send, up, down) {
+    return [
+      el('button', {
+        class: 'btn ghost sm',
+        text: '↑',
+        title: t(up),
+        disabled: index === 0,
+        onclick: (event) => {
+          event.stopPropagation();
+          shift(siblings, index, -1, send);
+        },
+      }),
+      el('button', {
+        class: 'btn ghost sm',
+        text: '↓',
+        title: t(down),
+        disabled: index === siblings.length - 1,
+        onclick: (event) => {
+          event.stopPropagation();
+          shift(siblings, index, 1, send);
+        },
+      }),
+    ];
+  }
+
+  function entryNode(entry, siblings, index) {
+    return el(
+      'div',
+      { class: 'entry-row' },
+      el('button', {
+        class: `entry${entry.id === currentId ? ' active' : ''}`,
+        title: entry.title,
+        text: entry.title,
+        onclick: () => open(entry.id),
+      }),
+      el(
+        'div',
+        { class: 'entry-tools' },
+        movers(siblings, index, api.reorderEntries, 'codex.raiseEntry', 'codex.lowerEntry')
+      )
+    );
+  }
+
+  function chapterNode(chapter, siblings, index) {
     const children = el(
       'div',
       { class: 'chapter-children' },
-      chapter.entries.map((entry) =>
-        el('button', {
-          class: `entry${entry.id === currentId ? ' active' : ''}`,
-          text: entry.title,
-          onclick: () => open(entry.id),
-        })
-      ),
-      chapter.children.map((child) => chapterNode(child))
+      chapter.entries.map((entry, place) => entryNode(entry, chapter.entries, place)),
+      chapter.children.map((child, place) => chapterNode(child, chapter.children, place))
     );
 
-    const node = el(
+    const tools = el(
       'div',
-      { class: 'chapter' },
-      el(
-        'div',
-        { class: 'chapter-row' },
-        el('span', { class: 'caret', text: '▾' }),
-        el('span', { style: { flex: '1' }, text: chapter.title }),
-        el('button', {
-          class: 'btn ghost sm',
-          text: '+',
-          title: t('codex.addEntry'),
-          onclick: (event) => {
-            event.stopPropagation();
-            entryForm({ chapter_id: chapter.id }, outline, (entry) =>
-              renderCodex(container, { entryId: entry.id })
-            );
-          },
-        }),
-        el('button', {
-          class: 'btn ghost sm',
-          text: '⚙',
-          title: t('codex.editChapter'),
-          onclick: (event) => {
-            event.stopPropagation();
-            chapterForm(chapter, outline, () => renderCodex(container, { entryId: currentId }));
-          },
-        }),
-        el('button', {
-          class: 'btn ghost sm danger',
-          text: '✕',
-          title: t('codex.dropChapter'),
-          onclick: async (event) => {
-            event.stopPropagation();
-            const yes = await confirmAction({
-              title: t('codex.dropChapterTitle'),
-              message: t('codex.dropChapterText', { name: chapter.title }),
-              hint: chapterHint(chapter),
-            });
-            if (!yes) return;
-            await api.deleteChapter(chapter.id);
-            lastEntryId = null;
-            toast(t('codex.chapterDropped'), chapter.title);
-            renderCodex(container);
-          },
-        })
-      ),
-      children
+      { class: 'chapter-tools' },
+      movers(siblings, index, api.reorderChapters, 'codex.raiseChapter', 'codex.lowerChapter'),
+      el('button', {
+        class: 'btn ghost sm',
+        text: '+',
+        title: t('codex.addEntry'),
+        onclick: (event) => {
+          event.stopPropagation();
+          entryForm({ chapter_id: chapter.id }, outline, (entry) =>
+            renderCodex(container, { entryId: entry.id })
+          );
+        },
+      }),
+      el('button', {
+        class: 'btn ghost sm',
+        text: '⚙',
+        title: t('codex.editChapter'),
+        onclick: (event) => {
+          event.stopPropagation();
+          chapterForm(chapter, outline, () => renderCodex(container, { entryId: currentId }));
+        },
+      }),
+      el('button', {
+        class: 'btn ghost sm danger',
+        text: '✕',
+        title: t('codex.dropChapter'),
+        onclick: async (event) => {
+          event.stopPropagation();
+          const yes = await confirmAction({
+            title: t('codex.dropChapterTitle'),
+            message: t('codex.dropChapterText', { name: chapter.title }),
+            hint: chapterHint(chapter),
+          });
+          if (!yes) return;
+          await api.deleteChapter(chapter.id);
+          lastEntryId = null;
+          toast(t('codex.chapterDropped'), chapter.title);
+          renderCodex(container);
+        },
+      })
     );
 
-    node.querySelector('.chapter-row').addEventListener('click', (event) => {
+    const row = el(
+      'div',
+      { class: 'chapter-row' },
+      el('span', { class: 'caret', text: '▾' }),
+      el('span', { class: 'chapter-name', title: chapter.title, text: chapter.title }),
+      tools
+    );
+
+    const node = el('div', { class: `chapter${unfolded.has(chapter.id) ? '' : ' closed'}` }, row, children);
+
+    row.addEventListener('click', (event) => {
       if (event.target.closest('button.btn')) return;
-      node.classList.toggle('closed');
+      if (node.classList.toggle('closed')) unfolded.delete(chapter.id);
+      else unfolded.add(chapter.id);
     });
     return node;
   }
@@ -154,6 +209,7 @@ export async function renderCodex(container, params = {}) {
     const nextIndex = order.findIndex((item) => item.id === entryId);
     currentId = entryId;
     lastEntryId = entryId;
+    unfold(outline, entryId);
     drawTree();
     await drawPage(direction || (nextIndex > previousIndex ? 1 : -1));
   }
@@ -306,6 +362,31 @@ export async function renderCodex(container, params = {}) {
   await drawPage(0);
 }
 
+function chapterIds(chapters) {
+  return chapters.flatMap((chapter) => [chapter.id, ...chapterIds(chapter.children)]);
+}
+
+function forget(open, alive) {
+  const kept = new Set(alive);
+  for (const id of open) {
+    if (!kept.has(id)) open.delete(id);
+  }
+}
+
+function trailTo(chapters, entryId, trail = []) {
+  for (const chapter of chapters) {
+    const path = [...trail, chapter.id];
+    if (chapter.entries.some((entry) => entry.id === entryId)) return path;
+    const deeper = trailTo(chapter.children, entryId, path);
+    if (deeper) return deeper;
+  }
+  return null;
+}
+
+function unfold(chapters, entryId) {
+  for (const id of trailTo(chapters, entryId) || []) unfolded.add(id);
+}
+
 function chapterWeight(chapter) {
   let chapters = 0;
   let entries = chapter.entries.length;
@@ -370,7 +451,6 @@ function chapterForm(chapter, outline, onDone) {
           chapterOptions(outline).filter((option) => option.value !== chapter?.id)
         ),
       },
-      { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: chapter?.icon_id ?? null },
     ],
     onSubmit: async (values) => {
       if (!values.title.trim()) throw new Error(t('common.titleRequired'));
@@ -396,7 +476,6 @@ function entryForm(entry, outline, onDone) {
       },
       { name: 'title', label: t('codex.entryTitle'), value: entry?.title || '' },
       { name: 'body', label: t('codex.entryBody'), type: 'textarea', rows: 14, value: entry?.body || '' },
-      { name: 'cover_id', label: t('codex.cover'), type: 'media', kind: 'image', value: entry?.cover_id ?? null },
     ],
     onSubmit: async (values) => {
       if (!values.title.trim()) throw new Error(t('rem.headingRequired'));

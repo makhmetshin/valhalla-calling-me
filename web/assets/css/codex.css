@@ -27,7 +27,7 @@
 .codex-tree .chapter > .chapter-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 7px 8px;
   cursor: pointer;
   color: var(--steel);
@@ -35,6 +35,14 @@
   font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.codex-tree .chapter-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .codex-tree .chapter > .chapter-row:hover {
@@ -61,6 +69,42 @@
   padding-left: 14px;
   border-left: 1px solid var(--line-soft);
   margin-left: 12px;
+}
+
+.codex-tree .entry-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.codex-tree .entry-row .entry {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.codex-tree .chapter-tools,
+.codex-tree .entry-tools {
+  display: none;
+  flex: none;
+  gap: 2px;
+}
+
+.codex-tree .chapter-row:hover .chapter-tools,
+.codex-tree .chapter-row:focus-within .chapter-tools,
+.codex-tree .entry-row:hover .entry-tools,
+.codex-tree .entry-row:focus-within .entry-tools {
+  display: flex;
+}
+
+.codex-tree .chapter-tools .btn,
+.codex-tree .entry-tools .btn {
+  padding: 3px 5px;
+  font-size: 10px;
+  line-height: 1.3;
+  letter-spacing: 0;
 }
 
 .codex-tree .entry {

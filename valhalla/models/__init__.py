@@ -1,4 +1,5 @@
 from valhalla.models.achievements import Achievement, AchievementGroup
+from valhalla.models.assessments import AssessmentAnswer, AssessmentAttempt
 from valhalla.models.codex import CodexChapter, CodexEntry, codex_entry_images
 from valhalla.models.enums import (
     CADENCE_SECONDS,
@@ -29,6 +30,8 @@ __all__ = [
     "CADENCE_SECONDS",
     "Achievement",
     "AchievementGroup",
+    "AssessmentAnswer",
+    "AssessmentAttempt",
     "CodexChapter",
     "CodexEntry",
     "DayPlan",

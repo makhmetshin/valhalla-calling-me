@@ -80,7 +80,7 @@ def test_codex_export_points_at_the_pictures(session, settings, png_bytes):
     asset = media_service.store_upload(session, "рассвет.png", png_bytes, "Рассвет")
     codex_service.create_entry(
         session,
-        CodexEntryCreate(chapter_id=root.id, title="С картинкой", cover_id=asset.id),
+        CodexEntryCreate(chapter_id=root.id, title="С картинкой", image_ids=[asset.id]),
     )
 
     written = service.export_codex(session)

@@ -303,6 +303,13 @@ ICONS: dict[str, str] = {
     "rune-tiwaz": ('<path d="M32 9 L32 57"/><path d="M32 9 L19 24"/><path d="M32 9 L45 24"/>'),
     "rune-fehu": ('<path d="M22 7 L22 57"/><path d="M22 17 L43 8"/><path d="M22 32 L43 23"/>'),
     "rune-uruz": '<path d="M20 57 L20 12 L44 21 L44 57"/>',
+    "rune-isa": '<path d="M32 7 L32 57"/>',
+    "rune-kenaz": '<path d="M44 9 L22 32 L44 55"/>',
+    "rune-raidho": (
+        '<path d="M22 7 L22 57"/>' '<path d="M22 7 L42 15 L22 31"/>' '<path d="M27 33 L43 57"/>'
+    ),
+    "rune-naudhiz": '<path d="M32 7 L32 57"/><path d="M18 40 L46 24"/>',
+    "rune-thurisaz": '<path d="M22 7 L22 57"/><path d="M22 18 L42 32 L22 46"/>',
     "north-star": (
         '<path d="M32 4 C34 21 43 30 60 32 C43 34 34 43 32 60 '
         'C30 43 21 34 4 32 C21 30 30 21 32 4 Z"/>'
