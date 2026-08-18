@@ -9,6 +9,7 @@ import { applyAppearance } from './core/themes.js';
 import { playReminder } from './core/audio.js';
 import { toast } from './core/toast.js';
 import { renderAchievements } from './views/achievements.js';
+import { renderAssessments } from './views/assessments.js';
 import { renderCodex } from './views/codex.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderMetrics } from './views/metrics.js';
@@ -28,6 +29,7 @@ const ROUTES = () => [
   { name: 'reminders', title: t('nav.reminders'), icon: 'raven', render: renderReminders },
   { name: 'codex', title: t('nav.codex'), icon: 'wolf', render: renderCodex },
   { name: 'tablets', title: t('nav.tablets'), icon: 'rune-tiles', render: renderTablets },
+  { name: 'assessments', title: t('nav.assessments'), icon: 'urd-well', render: renderAssessments },
   { name: 'music', title: t('nav.music'), icon: 'dawn-horn', render: renderMusic },
   { name: 'settings', title: t('nav.settings'), icon: 'vegvisir', render: renderSettings },
 ];

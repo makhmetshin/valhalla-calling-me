@@ -152,8 +152,6 @@ def _chapter_lines(chapter: CodexChapter, depth: int, base: Path) -> list[str]:
 
 def _entry_lines(entry: CodexEntry, depth: int, base: Path) -> list[str]:
     lines = [f"{'#' * min(depth, MAX_HEADING)} {entry.title}", ""]
-    if entry.cover:
-        lines.extend([_image(entry.cover, base), ""])
     if entry.body.strip():
         lines.extend([entry.body.strip(), ""])
     for image in entry.images:

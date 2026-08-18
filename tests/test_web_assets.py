@@ -19,6 +19,7 @@ TRANSLATION_CALL = re.compile(r"(?<![\w.])t\(\s*'([^']+)'")
 ROUTE_LINE = re.compile(r"name:\s*'([^']+)',\s*title:.*?icon:\s*'([^']+)'")
 ASSET_REFERENCE = re.compile(r"/presets/(icons|glyphs|backgrounds)/([\w.-]+\.svg)")
 COLLECTION_LINE = re.compile(r"COLLECTION_KEYS = \[([^\]]+)\]")
+RUNE_LINE = re.compile(r"const RUNES = \[([^\]]+)\]")
 TOKEN_GROUP = re.compile(r"\{ name: '(\w+)', tokens: \[([^\]]+)\] \}")
 PALETTE_BLOCK = re.compile(r"palette: \{(.*?)\n    \}", re.S)
 PALETTE_KEY = re.compile(r"^\s+'?([\w-]+)'?:", re.M)
@@ -108,6 +109,24 @@ def test_media_collections_are_translated():
 
     for name in re.findall(r"'([^']+)'", listed.group(1)):
         assert f"collection.{name}" in russian
+
+
+def test_the_rune_scale_is_drawn_from_glyphs_that_exist():
+    source = read(WEB / "assets" / "js" / "views" / "assessments.js")
+    listed = RUNE_LINE.search(source)
+
+    assert listed is not None
+    names = re.findall(r"'([\w-]+)'", listed.group(1))
+    assert len(names) >= 5
+    for name in names:
+        assert (PRESETS / "glyphs" / f"{name}.svg").is_file(), name
+
+
+def test_the_rune_scale_avoids_the_appropriated_runes():
+    source = read(WEB / "assets" / "js" / "views" / "assessments.js")
+    names = set(re.findall(r"'([\w-]+)'", RUNE_LINE.search(source).group(1)))
+
+    assert not names & {"rune-algiz", "rune-tiwaz"}
 
 
 def test_every_page_has_a_name_and_a_glyph():
@@ -252,6 +271,22 @@ def test_the_codex_gives_up_only_when_it_has_no_chapters():
 
     assert "if (!outline.length) {" in source
     assert "if (!order.length) {" not in source
+
+
+def test_the_codex_tree_starts_folded_and_only_remembers_it_while_the_app_runs():
+    source = read(WEB / "assets" / "js" / "views" / "codex.js")
+
+    assert "const unfolded = new Set();" in source
+    assert "unfolded.has(chapter.id) ? '' : ' closed'" in source
+    assert "savePreferences" not in source
+
+
+def test_a_window_never_squashes_what_it_shows():
+    style = read(WEB / "assets" / "css" / "components.css")
+    rule = ".modal .modal-body > * {"
+
+    assert rule in style
+    assert "flex-shrink: 0" in style.split(rule)[1].split("}")[0]
 
 
 def test_a_window_closes_only_by_its_own_buttons():

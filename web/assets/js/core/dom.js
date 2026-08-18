@@ -1,4 +1,15 @@
-const SVG_TAGS = new Set(['svg', 'path', 'circle', 'line', 'polygon', 'g']);
+const SVG_TAGS = new Set([
+  'svg',
+  'path',
+  'circle',
+  'line',
+  'polygon',
+  'polyline',
+  'rect',
+  'text',
+  'title',
+  'g',
+]);
 
 export function el(tag, props = {}, ...children) {
   const node = SVG_TAGS.has(tag)

@@ -106,10 +106,12 @@ export const api = {
   createChapter: (payload) => post('/codex/chapters', payload),
   updateChapter: (id, payload) => patch(`/codex/chapters/${id}`, payload),
   deleteChapter: (id) => remove(`/codex/chapters/${id}`),
+  reorderChapters: (ids) => post('/codex/chapters/order', { ids }),
   entry: (id) => get(`/codex/entries/${id}`),
   createEntry: (payload) => post('/codex/entries', payload),
   updateEntry: (id, payload) => patch(`/codex/entries/${id}`, payload),
   deleteEntry: (id) => remove(`/codex/entries/${id}`),
+  reorderEntries: (ids) => post('/codex/entries/order', { ids }),
 
   tabletKinds: () => get('/tablets/kinds'),
   createTabletKind: (payload) => post('/tablets/kinds', payload),
@@ -121,6 +123,19 @@ export const api = {
   saveTabletPage: (id, payload) => patch(`/tablets/pages/${id}`, payload),
   deleteTabletPage: (id) => remove(`/tablets/pages/${id}`),
   addTabletRow: (id) => post(`/tablets/pages/${id}/rows`),
+
+  assessments: (language) => get(`/assessments?language=${language}`),
+  assessment: (slug, language) => get(`/assessments/${slug}?language=${language}`),
+  assessmentAttempts: (slug, language, range = {}) => {
+    const query = new URLSearchParams({ language });
+    if (range.since) query.set('since', range.since);
+    if (range.until) query.set('until', range.until);
+    return get(`/assessments/${slug}/attempts?${query}`);
+  },
+  recordAttempt: (slug, language, payload) =>
+    post(`/assessments/${slug}/attempts?language=${language}`, payload),
+  assessmentAttempt: (id, language) => get(`/assessments/attempts/${id}?language=${language}`),
+  deleteAttempt: (id) => remove(`/assessments/attempts/${id}`),
 
   exportCodex: (language) => post(`/export/codex?language=${language}`),
   exportTablets: (language) => post(`/export/tablets?language=${language}`),

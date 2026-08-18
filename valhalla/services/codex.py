@@ -12,7 +12,6 @@ from valhalla.schemas.codex import (
     CodexEntrySummary,
     CodexEntryUpdate,
 )
-from valhalla.schemas.media import MediaRead
 from valhalla.services.errors import ValidationError
 from valhalla.services.repository import apply_patch, next_position, require
 
@@ -38,8 +37,6 @@ def _serialize_chapter(chapter: CodexChapter) -> CodexChapterRead:
         position=chapter.position,
         is_preset=chapter.is_preset,
         parent_id=chapter.parent_id,
-        icon_id=chapter.icon_id,
-        icon=MediaRead.model_validate(chapter.icon) if chapter.icon else None,
         entries=[CodexEntrySummary.model_validate(entry) for entry in chapter.entries],
         children=[_serialize_chapter(child) for child in chapter.children],
     )

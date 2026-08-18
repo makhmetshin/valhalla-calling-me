@@ -476,6 +476,10 @@ label.check input {
   gap: 15px;
 }
 
+.modal .modal-body > * {
+  flex-shrink: 0;
+}
+
 .modal footer {
   display: flex;
   justify-content: flex-end;

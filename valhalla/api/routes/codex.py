@@ -45,8 +45,6 @@ def create_chapter(session: DbSession, payload: CodexChapterCreate) -> CodexChap
         position=chapter.position,
         is_preset=chapter.is_preset,
         parent_id=chapter.parent_id,
-        icon_id=chapter.icon_id,
-        icon=None,
         entries=[],
         children=[],
     )

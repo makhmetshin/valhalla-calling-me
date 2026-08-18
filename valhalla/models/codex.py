@@ -25,19 +25,19 @@ class CodexChapter(TimestampMixin, Base):
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("codex_chapters.id", ondelete="CASCADE"), default=None, index=True
     )
-    icon_id: Mapped[int | None] = mapped_column(
-        ForeignKey("media_assets.id", ondelete="SET NULL"), default=None
-    )
 
-    icon: Mapped[MediaAsset | None] = relationship(lazy="selectin")
     children: Mapped[list[CodexChapter]] = relationship(
-        back_populates="parent", cascade="all, delete-orphan", order_by="CodexChapter.position"
+        back_populates="parent",
+        cascade="all, delete-orphan",
+        order_by="CodexChapter.position, CodexChapter.id",
     )
     parent: Mapped[CodexChapter | None] = relationship(
         back_populates="children", remote_side="CodexChapter.id"
     )
     entries: Mapped[list[CodexEntry]] = relationship(
-        back_populates="chapter", cascade="all, delete-orphan", order_by="CodexEntry.position"
+        back_populates="chapter",
+        cascade="all, delete-orphan",
+        order_by="CodexEntry.position, CodexEntry.id",
     )
 
 
@@ -52,10 +52,6 @@ class CodexEntry(TimestampMixin, Base):
     body: Mapped[str] = mapped_column(Text, default="")
     position: Mapped[int] = mapped_column(default=0)
     is_preset: Mapped[bool] = mapped_column(default=False)
-    cover_id: Mapped[int | None] = mapped_column(
-        ForeignKey("media_assets.id", ondelete="SET NULL"), default=None
-    )
 
     chapter: Mapped[CodexChapter] = relationship(back_populates="entries")
-    cover: Mapped[MediaAsset | None] = relationship(lazy="selectin")
     images: Mapped[list[MediaAsset]] = relationship(secondary=codex_entry_images, lazy="selectin")

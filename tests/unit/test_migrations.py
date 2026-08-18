@@ -25,6 +25,19 @@ def old_database(tmp_path):
         connection.execute("CREATE TABLE tasks (id INTEGER PRIMARY KEY, title TEXT)")
         connection.execute("INSERT INTO tracks (title) VALUES ('Old Song')")
         connection.execute("INSERT INTO tasks (title) VALUES ('Наколоть дров')")
+        connection.execute(
+            """
+            CREATE TABLE codex_chapters (
+                id INTEGER NOT NULL,
+                title VARCHAR(200) NOT NULL,
+                icon_id INTEGER,
+                CONSTRAINT pk_codex_chapters PRIMARY KEY (id),
+                CONSTRAINT fk_codex_chapters_icon_id_media_assets
+                    FOREIGN KEY(icon_id) REFERENCES media_assets (id) ON DELETE SET NULL
+            )
+            """
+        )
+        connection.execute("INSERT INTO codex_chapters (title) VALUES ('Путь')")
         connection.commit()
     return path
 
@@ -49,6 +62,19 @@ def test_missing_indexes_are_added(tmp_path):
     engine.dispose()
 
     assert "ix_tasks_group_id" in indexes_of(path, "tasks")
+
+
+def test_a_column_the_app_stopped_using_is_left_where_it_lies(tmp_path):
+    path = old_database(tmp_path)
+    engine = create_engine(f"sqlite:///{path.as_posix()}")
+
+    apply_migrations(engine)
+    with engine.begin() as connection:
+        rows = list(connection.execute(text("SELECT title FROM codex_chapters")))
+    engine.dispose()
+
+    assert "icon_id" in columns_of(path, "codex_chapters")
+    assert rows == [("Путь",)]
 
 
 def test_rows_survive_the_migration(tmp_path):
