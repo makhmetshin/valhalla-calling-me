@@ -20,6 +20,7 @@ class EntityKind(StrEnum):
     ACHIEVEMENT_GROUP = "achievement_group"
     METRIC = "metric"
     TASK = "task"
+    TASK_GROUP = "task_group"
     DAY_PLAN = "day_plan"
     REMINDER = "reminder"
     CODEX_CHAPTER = "codex_chapter"

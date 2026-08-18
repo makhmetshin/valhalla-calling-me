@@ -17,6 +17,7 @@ from valhalla.models import (
     TabletKind,
     TabletPage,
     Task,
+    TaskGroup,
     Track,
 )
 from valhalla.schemas.links import EntityRef, LinkCreate, LinkRead
@@ -28,6 +29,7 @@ ENTITY_MODELS: dict[EntityKind, type[Base]] = {
     EntityKind.ACHIEVEMENT_GROUP: AchievementGroup,
     EntityKind.METRIC: Metric,
     EntityKind.TASK: Task,
+    EntityKind.TASK_GROUP: TaskGroup,
     EntityKind.DAY_PLAN: DayPlan,
     EntityKind.REMINDER: Reminder,
     EntityKind.CODEX_CHAPTER: CodexChapter,
@@ -56,6 +58,9 @@ def _describe(kind: EntityKind, instance: Base) -> EntityRef:
             return EntityRef(
                 kind=kind, id=instance.id, label=instance.title, detail=str(instance.state)
             )
+        case EntityKind.TASK_GROUP:
+            assert isinstance(instance, TaskGroup)
+            return EntityRef(kind=kind, id=instance.id, label=instance.name)
         case EntityKind.DAY_PLAN:
             assert isinstance(instance, DayPlan)
             label = instance.title or instance.plan_date.isoformat()

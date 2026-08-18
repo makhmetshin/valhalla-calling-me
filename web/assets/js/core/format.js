@@ -16,6 +16,7 @@ export const ENTITY_KINDS = [
   'achievement_group',
   'metric',
   'task',
+  'task_group',
   'day_plan',
   'reminder',
   'codex_chapter',
@@ -24,6 +25,11 @@ export const ENTITY_KINDS = [
   'tablet_page',
   'track',
 ];
+
+export function byLabel(items, name = (item) => item.label) {
+  const collator = new Intl.Collator(locale(), { sensitivity: 'base', numeric: true });
+  return [...items].sort((first, second) => collator.compare(name(first), name(second)));
+}
 
 export function cadenceLabel(value) {
   return t(`cadence.${value}`);

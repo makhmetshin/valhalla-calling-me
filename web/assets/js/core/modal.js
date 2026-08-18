@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { clear, el, mount } from './dom.js';
-import { COLLECTION_KEYS, ENTITY_KINDS, collectionLabel, entityLabel } from './format.js';
+import { COLLECTION_KEYS, ENTITY_KINDS, byLabel, collectionLabel, entityLabel } from './format.js';
 import { t } from './i18n.js';
 import { loadMedia, mediaById, mediaOfKind } from './state.js';
 import { previewUrl, stopSound } from './audio.js';
@@ -279,7 +279,7 @@ function entityPicker(field) {
   const itemSelect = el('select', {});
 
   function fillItems(preferredId) {
-    const items = catalog[kindSelect.value] || [];
+    const items = byLabel(catalog[kindSelect.value] || []);
     itemSelect.disabled = !items.length;
     mount(
       itemSelect,

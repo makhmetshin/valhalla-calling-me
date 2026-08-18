@@ -17,6 +17,7 @@ class TaskRead(ReadModel):
     position: int
     units: int
     completed_at: datetime | None
+    group_id: int | None
     icon_id: int | None
     achievement_id: int | None
     metric_id: int | None
@@ -29,6 +30,7 @@ class TaskCreate(WriteModel):
     title: str = Field(min_length=1, max_length=200)
     notes: str = ""
     units: int = Field(default=1, ge=1, le=96)
+    group_id: int | None = None
     icon_id: int | None = None
     achievement_id: int | None = None
     metric_id: int | None = None
@@ -40,7 +42,29 @@ class TaskUpdate(WriteModel):
     notes: str | None = None
     state: TaskState | None = None
     units: int | None = Field(default=None, ge=1, le=96)
+    group_id: int | None = None
     icon_id: int | None = None
     achievement_id: int | None = None
     metric_id: int | None = None
     metric_delta: float | None = None
+
+
+class TaskGroupRead(ReadModel):
+    id: int
+    name: str
+    description: str
+    position: int
+    icon_id: int | None
+    icon: MediaRead | None
+
+
+class TaskGroupCreate(WriteModel):
+    name: str = Field(min_length=1, max_length=160)
+    description: str = ""
+    icon_id: int | None = None
+
+
+class TaskGroupUpdate(WriteModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    description: str | None = None
+    icon_id: int | None = None

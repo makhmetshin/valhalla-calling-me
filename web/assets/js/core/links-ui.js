@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { el, mount } from './dom.js';
-import { ENTITY_KINDS, entityLabel } from './format.js';
+import { ENTITY_KINDS, byLabel, entityLabel } from './format.js';
 import { t } from './i18n.js';
 import { closeModal, openModal } from './modal.js';
 import { openEntity } from './navigation.js';
@@ -21,8 +21,10 @@ export async function openLinks(kind, id, label) {
   const note = el('input', { type: 'text', placeholder: t('links.note') });
 
   function fillTargets() {
-    const options = (catalog[targetKind.value] || []).filter(
-      (item) => !(targetKind.value === kind && item.id === id)
+    const options = byLabel(
+      (catalog[targetKind.value] || []).filter(
+        (item) => !(targetKind.value === kind && item.id === id)
+      )
     );
     mount(
       targetId,

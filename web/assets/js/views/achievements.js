@@ -1,7 +1,7 @@
 import { api } from '../core/api.js';
 import { basisField } from '../core/basis.js';
 import { el, emptyState, iconPlate, mount } from '../core/dom.js';
-import { formatDateTime, formatNumber } from '../core/format.js';
+import { byLabel, formatDateTime, formatNumber } from '../core/format.js';
 import { t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
@@ -247,7 +247,7 @@ export function achievementForm(achievement, groups, metrics, onDone, samples = 
         type: 'select',
         value: achievement?.group_id ?? '',
         options: [{ value: null, label: t('ach.noGroupOption') }].concat(
-          groups.map((group) => ({ value: group.id, label: group.name }))
+          byLabel(groups.map((group) => ({ value: group.id, label: group.name })))
         ),
       },
       { name: 'icon_id', label: t('common.icon'), type: 'media', kind: 'image', value: achievement?.icon_id ?? null },
@@ -265,14 +265,16 @@ export function achievementForm(achievement, groups, metrics, onDone, samples = 
         type: 'select',
         value: achievement?.metric_id ?? '',
         options: [{ value: null, label: t('ach.noMetricOption') }].concat(
-          metrics.map((metric) => ({
-            value: metric.id,
-            label: t('ach.metricNow', {
-              name: metric.name,
-              value: formatNumber(metric.value),
-              unit: metric.unit,
-            }),
-          }))
+          byLabel(
+            metrics.map((metric) => ({
+              value: metric.id,
+              label: t('ach.metricNow', {
+                name: metric.name,
+                value: formatNumber(metric.value),
+                unit: metric.unit,
+              }),
+            }))
+          )
         ),
       },
       {

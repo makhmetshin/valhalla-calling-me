@@ -10,6 +10,21 @@ from valhalla.models.enums import TaskState
 from valhalla.models.media import MediaAsset
 
 
+class TaskGroup(TimestampMixin, Base):
+    __tablename__ = "task_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(160), unique=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    position: Mapped[int] = mapped_column(default=0)
+    icon_id: Mapped[int | None] = mapped_column(
+        ForeignKey("media_assets.id", ondelete="SET NULL"), default=None
+    )
+
+    icon: Mapped[MediaAsset | None] = relationship(lazy="selectin")
+    tasks: Mapped[list[Task]] = relationship(back_populates="group", order_by="Task.position")
+
+
 class Task(TimestampMixin, Base):
     __tablename__ = "tasks"
 
@@ -21,6 +36,9 @@ class Task(TimestampMixin, Base):
     units: Mapped[int] = mapped_column(default=1)
     completed_at: Mapped[datetime | None] = mapped_column(default=None)
 
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("task_groups.id", ondelete="SET NULL"), default=None, index=True
+    )
     icon_id: Mapped[int | None] = mapped_column(
         ForeignKey("media_assets.id", ondelete="SET NULL"), default=None
     )
@@ -32,4 +50,5 @@ class Task(TimestampMixin, Base):
     )
     metric_delta: Mapped[float] = mapped_column(default=0.0)
 
+    group: Mapped[TaskGroup | None] = relationship(back_populates="tasks")
     icon: Mapped[MediaAsset | None] = relationship(lazy="selectin")
