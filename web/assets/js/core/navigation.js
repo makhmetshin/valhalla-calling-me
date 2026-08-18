@@ -8,6 +8,7 @@ const ROUTE_BY_KIND = {
   achievement_group: 'achievements',
   metric: 'metrics',
   task: 'tasks',
+  task_group: 'tasks',
   day_plan: 'plan',
   reminder: 'reminders',
   codex_chapter: 'codex',

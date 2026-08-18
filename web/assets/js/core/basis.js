@@ -1,3 +1,4 @@
+import { byLabel } from './format.js';
 import { t } from './i18n.js';
 
 export function basisField(samples, chosen, reopen) {
@@ -11,7 +12,7 @@ export function basisField(samples, chosen, reopen) {
     transient: true,
     value: chosen ?? '',
     options: [{ value: null, label: t('common.fromScratch') }].concat(
-      samples.map((sample) => ({ value: sample.id, label: nameOf(sample) }))
+      byLabel(samples.map((sample) => ({ value: sample.id, label: nameOf(sample) })))
     ),
     onChange: (id) => {
       const sample = samples.find((item) => item.id === id);

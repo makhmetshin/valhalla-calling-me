@@ -1,7 +1,7 @@
 import { api } from '../core/api.js';
 import { applyBackground } from '../core/backgrounds.js';
 import { el, mount } from '../core/dom.js';
-import { formatBytes } from '../core/format.js';
+import { byLabel, formatBytes } from '../core/format.js';
 import { LANGUAGES, t } from '../core/i18n.js';
 import { confirmAction, formModal } from '../core/modal.js';
 import { currentRoute, setHeader } from '../core/router.js';
@@ -161,7 +161,7 @@ function soundBlock(container) {
       'select',
       {},
       [el('option', { value: '', text: t('set.noSound') })].concat(
-        mediaOfKind('audio').map((asset) =>
+        byLabel(mediaOfKind('audio'), (asset) => asset.title).map((asset) =>
           el('option', {
             value: String(asset.id),
             text: asset.title,
@@ -310,7 +310,7 @@ function lookBlock(container) {
     );
 
   const fontSelect = (key, label) => {
-    const fonts = mediaOfKind('font');
+    const fonts = byLabel(mediaOfKind('font'), (asset) => asset.title);
     const select = el(
       'select',
       {},

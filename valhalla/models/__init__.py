@@ -23,7 +23,7 @@ from valhalla.models.tablets import (
     TabletPage,
     TabletRow,
 )
-from valhalla.models.tasks import Task
+from valhalla.models.tasks import Task, TaskGroup
 
 __all__ = [
     "CADENCE_SECONDS",
@@ -51,6 +51,7 @@ __all__ = [
     "TabletPage",
     "TabletRow",
     "Task",
+    "TaskGroup",
     "TaskState",
     "Track",
     "codex_entry_images",

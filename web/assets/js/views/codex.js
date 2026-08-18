@@ -1,6 +1,6 @@
 import { api } from '../core/api.js';
 import { clear, el, emptyState, mount } from '../core/dom.js';
-import { formatDateTime, renderProse } from '../core/format.js';
+import { byLabel, formatDateTime, renderProse } from '../core/format.js';
 import { language, t } from '../core/i18n.js';
 import { openLinks } from '../core/links-ui.js';
 import { confirmAction, formModal } from '../core/modal.js';
@@ -349,12 +349,10 @@ function flatten(chapters, trail = []) {
 }
 
 function chapterOptions(chapters, depth = 0) {
-  const result = [];
-  for (const chapter of chapters) {
-    result.push({ value: chapter.id, label: `${'— '.repeat(depth)}${chapter.title}` });
-    result.push(...chapterOptions(chapter.children, depth + 1));
-  }
-  return result;
+  return byLabel(chapters, (chapter) => chapter.title).flatMap((chapter) => [
+    { value: chapter.id, label: `${'— '.repeat(depth)}${chapter.title}` },
+    ...chapterOptions(chapter.children, depth + 1),
+  ]);
 }
 
 function chapterForm(chapter, outline, onDone) {

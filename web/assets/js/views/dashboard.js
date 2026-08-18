@@ -45,7 +45,7 @@ export async function renderDashboard(container) {
       el(
         'div',
         { class: 'grid cards' },
-        overview.metrics.slice(0, 6).map((metric) => metricTile(metric, container))
+        overview.metrics.map((metric) => metricTile(metric, container))
       )
     );
   }
@@ -56,7 +56,7 @@ export async function renderDashboard(container) {
       ? el(
           'div',
           { class: 'list' },
-          overview.open_tasks.slice(0, 8).map((task) =>
+          overview.open_tasks.map((task) =>
             el(
               'div',
               { class: 'list-item' },

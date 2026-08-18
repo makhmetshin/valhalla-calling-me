@@ -75,6 +75,11 @@ export const api = {
   adjustMetric: (id, payload) => post(`/metrics/${id}/adjust`, payload),
   metricHistory: (id) => get(`/metrics/${id}/history`),
 
+  taskGroups: () => get('/tasks/groups'),
+  createTaskGroup: (payload) => post('/tasks/groups', payload),
+  updateTaskGroup: (id, payload) => patch(`/tasks/groups/${id}`, payload),
+  deleteTaskGroup: (id) => remove(`/tasks/groups/${id}`),
+
   tasks: () => get('/tasks'),
   createTask: (payload) => post('/tasks', payload),
   updateTask: (id, payload) => patch(`/tasks/${id}`, payload),
